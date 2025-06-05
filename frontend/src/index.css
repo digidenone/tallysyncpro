@@ -1,0 +1,715 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 210 40% 98%;
+    --foreground: 222.2 84% 4.9%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 222.2 84% 4.9%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 222.2 84% 4.9%;
+
+    --primary: 240 5.9% 10%;
+    --primary-foreground: 0 0% 98%;
+
+    --secondary: 240 4.8% 95.9%;
+    --secondary-foreground: 240 5.9% 10%;
+
+    --muted: 240 4.8% 95.9%;
+    --muted-foreground: 240 3.8% 46.1%;
+
+    --accent: 240 4.8% 95.9%;
+    --accent-foreground: 240 5.9% 10%;
+
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 0 0% 98%;
+
+    --border: 240 5.9% 90%;
+    --input: 240 5.9% 90%;
+    --ring: 240 5.9% 10%;
+
+    --radius: 0.75rem;
+
+    --sidebar-background: 0 0% 98%;
+    --sidebar-foreground: 240 5.3% 26.1%;
+    --sidebar-primary: 240 5.9% 10%;
+    --sidebar-primary-foreground: 0 0% 98%;
+    --sidebar-accent: 240 4.8% 95.9%;
+    --sidebar-accent-foreground: 240 5.9% 10%;
+    --sidebar-border: 220 13% 91%;
+    --sidebar-ring: 217.2 91.2% 59.8%;
+  }
+
+  .dark {
+    --background: 222.2 84% 4.9%;
+    --foreground: 210 40% 98%;
+
+    --card: 222.2 84% 4.9%;
+    --card-foreground: 210 40% 98%;
+
+    --popover: 222.2 84% 4.9%;
+    --popover-foreground: 210 40% 98%;
+
+    --primary: 210 40% 98%;
+    --primary-foreground: 222.2 47.4% 11.2%;
+
+    --secondary: 217.2 32.6% 17.5%;
+    --secondary-foreground: 210 40% 98%;
+
+    --muted: 217.2 32.6% 17.5%;
+    --muted-foreground: 215 20.2% 65.1%;
+
+    --accent: 217.2 32.6% 17.5%;
+    --accent-foreground: 210 40% 98%;
+
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 217.2 32.6% 17.5%;
+    --input: 217.2 32.6% 17.5%;
+    --ring: 212.7 26.8% 83.9%;
+    --sidebar-background: 240 5.9% 10%;
+    --sidebar-foreground: 240 4.8% 95.9%;
+    --sidebar-primary: 224.3 76.3% 48%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 240 3.7% 15.9%;
+    --sidebar-accent-foreground: 240 4.8% 95.9%;
+    --sidebar-border: 240 3.7% 15.9%;
+    --sidebar-ring: 217.2 91.2% 59.8%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+    font-feature-settings: "rlig" 1, "calt" 1;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-semibold tracking-tight;
+  }
+
+  h1 {
+    @apply text-3xl lg:text-4xl;
+  }
+
+  h2 {
+    @apply text-2xl lg:text-3xl;
+  }
+
+  h3 {
+    @apply text-xl lg:text-2xl;
+  }
+}
+
+@layer components {
+  .glass-card {
+    @apply bg-white/85 dark:bg-slate-900/85 backdrop-blur-md rounded-xl border border-white/30 dark:border-slate-700/40;
+    /* Custom shadow-glass utility */
+    box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.18), 0 1.5px 3px 0 rgba(31, 38, 135, 0.10);
+  }
+    .neo-card {
+    @apply bg-slate-50 dark:bg-slate-800 rounded-xl dark:shadow-none border border-slate-200 dark:border-slate-700;
+    /* Custom shadow-neo utility */
+    box-shadow: 
+      inset 8px 8px 16px #e2e8f0,
+      inset -8px -8px 16px #ffffff,
+      0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  }
+
+  .data-grid-cell {
+    @apply border border-slate-200 dark:border-slate-700 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all duration-150;
+  }
+
+  .data-grid-header {
+    @apply bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-medium px-3 py-2.5 text-left text-sm;
+  }
+
+  .gradient-heading {
+    @apply font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple to-teal-light;
+  }
+
+  .floating-panel {
+    @apply animate-float;
+  }
+  
+  .btn-gradient {
+    @apply bg-gradient-to-r from-purple to-teal-light hover:from-purple-dark hover:to-teal-dark text-white shadow-lg hover:shadow-xl transition-all;
+  }
+  
+  .glass-input {
+    @apply bg-white/50 dark:bg-slate-800/50 backdrop-blur-sm border border-white/30 dark:border-slate-700/40 rounded-lg focus:ring-2 ring-purple/30 dark:ring-purple/20 transition-all duration-200;
+  }
+  
+  .frost-card {
+    @apply bg-white/20 dark:bg-slate-900/20 backdrop-blur-xl border border-white/20 dark:border-slate-700/20 rounded-xl shadow-lg;
+  }
+}
+
+/* Excel-like grid styling */
+.grid-cell-selected {
+  @apply ring-2 ring-purple-light/70 bg-purple-light/10;
+}
+
+/* Glassmorphism styles */
+.glass-morphism {
+  @apply bg-white/10 dark:bg-slate-900/20 backdrop-blur-sm border border-white/20 dark:border-slate-700/20 rounded-xl;
+}
+
+/* Neumorphism styles */
+.neumorphism {
+  @apply bg-slate-100 dark:bg-slate-800 rounded-xl border border-slate-200/50 dark:border-slate-700/50;
+  box-shadow: 5px 5px 10px rgba(0, 0, 0, 0.03), -5px -5px 10px rgba(255, 255, 255, 0.5);
+}
+
+/* Animated card hover effect */
+.hover-card {
+  @apply transition-all duration-300 hover:shadow-lg hover:-translate-y-1;
+}
+
+/* Custom scrollbars */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  @apply bg-transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  @apply bg-slate-300 dark:bg-slate-700 rounded-full;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  @apply bg-slate-400 dark:bg-slate-600;
+}
+
+/* Enhance standard UI components */
+button {
+  @apply relative overflow-hidden;
+}
+
+button:after {
+  @apply content-[''] absolute inset-0 bg-white/10 opacity-0 transition-opacity;
+}
+
+button:hover:after {
+  @apply opacity-100;
+}
+
+/* Thin scrollbar */
+.scrollbar-thin::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.scrollbar-thin::-webkit-scrollbar-track {
+  @apply bg-transparent;
+}
+
+.scrollbar-thin::-webkit-scrollbar-thumb {
+  @apply bg-slate-300/50 dark:bg-slate-700/50 rounded-full;
+}
+
+.scrollbar-thin::-webkit-scrollbar-thumb:hover {
+  @apply bg-slate-400 dark:bg-slate-600;
+}
+
+/* Progress bar styling */
+progress {
+  @apply h-2 rounded-full bg-slate-200 dark:bg-slate-700 overflow-hidden appearance-none;
+}
+
+progress::-webkit-progress-bar {
+  @apply bg-slate-200 dark:bg-slate-700 rounded-full;
+}
+
+progress::-webkit-progress-value {
+  @apply bg-gradient-to-r from-purple to-teal-light rounded-full;
+}
+
+/* Custom animations */
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+.animate-float {
+  animation: float 6s ease-in-out infinite;
+}
+
+@keyframes pulse-subtle {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
+}
+
+.animate-pulse-subtle {
+  animation: pulse-subtle 2s infinite;
+}
+
+/* 3D Hover Card effect */
+.card-3d {
+  @apply transition-all duration-300;
+  perspective: 1000px;
+}
+
+.card-3d:hover {
+  transform: rotateY(5deg) rotateX(5deg) scale(1.02);
+}
+
+/* Text balance for better typography */
+p, h1, h2, h3, h4, h5, h6 {
+  text-wrap: balance;
+}
+
+/* Responsive Mobile-First Design */
+@layer utilities {
+  /* Mobile-first responsive containers */
+  .container-responsive {
+    @apply w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8;
+  }
+  
+  .container-mobile {
+    @apply w-full max-w-md mx-auto px-4;
+  }
+  
+  .container-tablet {
+    @apply w-full max-w-3xl mx-auto px-6;
+  }
+  
+  .container-desktop {
+    @apply w-full max-w-6xl mx-auto px-8;
+  }
+
+  /* Responsive spacing */
+  .spacing-mobile {
+    @apply space-y-4 md:space-y-6 lg:space-y-8;
+  }
+  
+  .spacing-section {
+    @apply py-8 md:py-12 lg:py-16;
+  }
+  
+  .spacing-component {
+    @apply p-4 md:p-6 lg:p-8;
+  }
+  /* Non-responsive grid layouts - Desktop Only */
+  .grid-responsive {
+    @apply grid grid-cols-4 gap-6;
+  }
+  
+  .grid-dashboard {
+    @apply grid grid-cols-3 gap-8;
+  }
+  
+  .grid-cards {
+    @apply grid grid-cols-3 gap-6;
+  }
+  
+  .grid-stats {
+    @apply grid grid-cols-4 gap-6;
+  }
+
+  /* Desktop navigation */
+  .nav-mobile {
+    @apply fixed bottom-0 left-0 right-0 bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-700 z-50 p-4;
+  }
+  
+  .nav-desktop {
+    @apply hidden md:flex;
+  }
+
+  /* Responsive typography */
+  .text-responsive-xl {
+    @apply text-2xl sm:text-3xl md:text-4xl lg:text-5xl;
+  }
+  
+  .text-responsive-lg {
+    @apply text-xl sm:text-2xl md:text-3xl lg:text-4xl;
+  }
+  
+  .text-responsive-md {
+    @apply text-lg sm:text-xl md:text-2xl;
+  }
+  
+  .text-responsive-sm {
+    @apply text-sm sm:text-base md:text-lg;
+  }
+
+  /* Non-responsive desktop design classes */
+  .container-desktop-only {
+    @apply w-full max-w-7xl mx-auto px-8;
+  }
+  
+  .text-desktop-xl {
+    @apply text-4xl;
+  }
+  
+  .text-desktop-lg {
+    @apply text-3xl;
+  }
+  
+  .text-desktop-md {
+    @apply text-2xl;
+  }
+  
+  .spacing-desktop-section {
+    @apply space-y-8;
+  }
+  
+  .padding-desktop {
+    @apply px-8 py-8;
+  }
+
+  /* Mobile-friendly buttons */
+  .btn-mobile {
+    @apply min-h-[44px] px-4 py-3 text-base;
+  }
+  
+  .btn-mobile-full {
+    @apply w-full min-h-[44px] px-4 py-3 text-base;
+  }
+
+  /* Card responsiveness */
+  .card-mobile {
+    @apply rounded-lg md:rounded-xl p-4 md:p-6;
+  }
+  
+  .card-stack {
+    @apply space-y-4 md:space-y-0 md:grid md:grid-cols-2 lg:grid-cols-3 md:gap-6;
+  }
+
+  /* Touch-friendly elements */
+  .touch-target {
+    @apply min-w-[44px] min-h-[44px];
+  }
+  
+  .touch-spacing {
+    @apply space-y-2 md:space-y-1;
+  }
+
+  /* Responsive visibility */
+  .mobile-only {
+    @apply block md:hidden;
+  }
+  
+  .tablet-up {
+    @apply hidden md:block;
+  }
+  
+  .desktop-only {
+    @apply hidden lg:block;
+  }
+
+  /* Mobile form styling */
+  .form-mobile {
+    @apply space-y-4;
+  }
+  
+  .input-mobile {
+    @apply w-full min-h-[44px] px-4 py-3 text-base border rounded-lg;
+  }
+  
+  .textarea-mobile {
+    @apply w-full min-h-[120px] px-4 py-3 text-base border rounded-lg resize-none;
+  }
+
+  /* Safe area padding for mobile devices */
+  .safe-area-bottom {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+  
+  .safe-area-top {
+    padding-top: env(safe-area-inset-top);
+  }
+
+  /* Mobile viewport handling */
+  .full-height-mobile {
+    min-height: 100vh;
+    min-height: 100dvh; /* Dynamic viewport height */
+  }
+
+  /* Responsive images */
+  .img-responsive {
+    @apply w-full h-auto max-w-full;
+  }
+  
+  .img-cover-mobile {
+    @apply w-full h-48 sm:h-64 md:h-80 object-cover rounded-lg;
+  }
+
+  /* Mobile-optimized tables */
+  .table-mobile {
+    @apply block md:table w-full;
+  }
+  
+  .table-mobile thead {
+    @apply hidden md:table-header-group;
+  }
+  
+  .table-mobile tbody {
+    @apply block md:table-row-group;
+  }
+  
+  .table-mobile tr {
+    @apply block md:table-row border-b md:border-b-0 mb-4 md:mb-0;
+  }
+  
+  .table-mobile td {
+    @apply block md:table-cell px-4 py-2 md:px-6 md:py-4;
+  }
+  
+  .table-mobile td:before {
+    content: attr(data-label) ": ";
+    @apply font-semibold md:hidden;
+  }
+
+  /* Mobile loading states */
+  .skeleton-mobile {
+    @apply animate-pulse bg-slate-200 dark:bg-slate-700 rounded h-4 md:h-6 w-full;
+  }
+
+  /* Mobile scroll containers */
+  .scroll-horizontal-mobile {
+    @apply overflow-x-auto scrollbar-thin pb-2;
+  }
+  
+  .scroll-container-mobile {
+    @apply max-h-96 overflow-y-auto scrollbar-thin;
+  }
+}
+
+/* =================================================================
+   TallySyncPro - Classic Non-Responsive Design System
+   
+   This section provides fixed-width, desktop-focused utilities
+   that override the responsive mobile-first design for a more
+   professional, business-oriented appearance.
+   ================================================================= */
+
+/* Classic Container System - Fixed Width */
+@layer utilities {
+  .classic-container {
+    @apply w-full max-w-7xl mx-auto px-8;
+  }
+  
+  .classic-container-narrow {
+    @apply w-full max-w-5xl mx-auto px-8;
+  }
+
+  /* Classic Grid System - Fixed Columns */
+  .classic-grid-2 {
+    @apply grid grid-cols-2 gap-8;
+  }
+  
+  .classic-grid-3 {
+    @apply grid grid-cols-3 gap-8;
+  }
+  
+  .classic-grid-4 {
+    @apply grid grid-cols-4 gap-6;
+  }
+
+  /* Classic Card Design */
+  .classic-card {
+    @apply bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-sm hover:shadow-md transition-shadow duration-200 rounded-lg;
+  }
+
+  /* Classic Typography */
+  .classic-heading-xl {
+    @apply text-4xl font-bold text-slate-900 dark:text-slate-100;
+  }
+  
+  .classic-heading-lg {
+    @apply text-3xl font-semibold text-slate-900 dark:text-slate-100;
+  }
+  
+  .classic-heading-md {
+    @apply text-2xl font-semibold text-slate-800 dark:text-slate-200;
+  }
+
+  /* Professional Status Indicators */
+  .status-indicator {
+    @apply inline-flex items-center gap-2 px-3 py-1 rounded-full text-sm font-medium;
+  }
+  
+  .status-connected {
+    @apply bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400;
+  }
+  
+  .status-disconnected {
+    @apply bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400;
+  }
+
+  /* Enhanced Visual Effects */
+  .gradient-primary {
+    @apply bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent;
+  }
+
+  /* Override responsive utilities for classic desktop design */
+  .force-grid-4 {
+    @apply grid grid-cols-4 gap-6;
+  }
+  
+  .force-grid-3 {
+    @apply grid grid-cols-3 gap-8;
+  }
+  
+  .force-text-xl {
+    @apply text-4xl;
+  }
+  
+  .force-text-lg {
+    @apply text-3xl;
+  }
+  
+  .force-text-md {
+    @apply text-2xl;
+  }
+}
+
+/* Force override responsive breakpoints for classic design */
+@media (min-width: 1px) {
+  /* Override container classes */
+  .container-responsive {
+    @apply w-full max-w-7xl mx-auto px-8 !important;
+  }
+  
+  /* Override grid classes */
+  .grid-responsive {
+    @apply grid grid-cols-4 gap-6 !important;
+  }
+  
+  .grid-dashboard {
+    @apply grid grid-cols-3 gap-8 !important;
+  }
+  
+  .grid-stats {
+    @apply grid grid-cols-4 gap-6 !important;
+  }
+  
+  .grid-cards {
+    @apply grid grid-cols-4 gap-6 !important;
+  }
+  
+  /* Override typography classes */
+  .text-responsive-xl {
+    @apply text-4xl !important;
+  }
+  
+  .text-responsive-lg {
+    @apply text-3xl !important;
+  }
+  
+  .text-responsive-md {
+    @apply text-2xl !important;
+  }
+  
+  .text-responsive-sm {
+    @apply text-xl !important;
+  }
+  
+  .text-responsive-base {
+    @apply text-lg !important;
+  }
+  
+  /* Override button classes */
+  .btn-mobile {
+    @apply h-11 px-6 py-2 text-base !important;
+  }
+  
+  .btn-mobile-full {
+    @apply w-full h-11 px-6 py-2 text-base !important;
+  }
+  
+  /* Override card classes */
+  .card-mobile {
+    @apply rounded-lg p-6 !important;
+  }
+  
+  /* Override spacing classes */
+  .spacing-mobile {
+    @apply space-y-8 !important;
+  }
+  
+  .spacing-section {
+    @apply py-8 !important;
+  }
+  
+  .spacing-component {
+    @apply p-6 !important;
+  }
+  
+  /* Override glass card */
+  .glass-card {
+    @apply bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-sm hover:shadow-md transition-shadow duration-200 rounded-lg !important;
+  }
+}
+
+/* Print styles */
+@media print {
+  .no-print {
+    @apply hidden;
+  }
+  
+  .print-full-width {
+    @apply w-full;
+  }
+  
+  body {
+    @apply text-black bg-white;
+  }
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  .glass-card {
+    @apply bg-white dark:bg-black border-2 border-black dark:border-white;
+  }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+  
+  .animate-float {
+    animation: none;
+  }
+}
+
+/* Focus visible for accessibility */
+.focus-visible:focus-visible {
+  @apply outline-2 outline-offset-2 outline-blue-500;
+}
+
+/* Mobile-specific improvements */
+@media (hover: none) and (pointer: coarse) {
+  .hover\\:scale-105:hover {
+    transform: none;
+  }
+  
+  .btn-mobile {
+    @apply active:bg-slate-100 dark:active:bg-slate-800;
+  }
+}
