@@ -1,0 +1,39 @@
+WELCOME TO TALLYSYNCPRO INSTALLATION
+
+Thank you for choosing TallySyncPro, the powerful data synchronization tool for Tally ERP 9.
+
+WHAT IS TALLYSYNCPRO?
+TallySyncPro is a professional desktop application that enables seamless data import from Excel files directly into your Tally ERP 9 system. With advanced features like real-time monitoring, batch processing, and comprehensive error handling, TallySyncPro streamlines your accounting workflow.
+
+SYSTEM REQUIREMENTS:
+- Windows 10 or later (64-bit)
+- Tally ERP 9 (Release 6.6 or later)
+- Microsoft Excel 2016 or later (or compatible spreadsheet application)
+- Minimum 4GB RAM
+- 500MB free disk space
+- ODBC connectivity enabled in Tally
+
+BEFORE INSTALLATION:
+1. Ensure Tally ERP 9 is installed and properly configured
+2. Close all running instances of Tally ERP 9
+3. Backup your existing Tally data as a precaution
+4. Run this installer as Administrator for best results
+
+WHAT WILL BE INSTALLED:
+- TallySyncPro Desktop Application
+- Excel Template Generator
+- Tally ODBC Connection Manager
+- Documentation and User Guide
+- Sample Excel Templates
+
+INSTALLATION NOTES:
+- The installation will create a desktop shortcut
+- TallySyncPro will be added to your Start Menu
+- Configuration wizard will run on first launch
+- Default installation directory: C:\Program Files\TallySyncPro
+
+For technical support and documentation, visit: www.digidenone.com
+
+Click Next to continue with the installation.
+
+Version 1.0 | Copyright © 2025 Digidenone | All Rights Reserved

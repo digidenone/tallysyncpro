@@ -1,0 +1,103 @@
+{
+  "name": "tallysyncpro",
+  "version": "1.0.0",
+  "description": "TallySyncPro - Desktop Application for Excel to Tally ERP Integration",
+  "main": "electron-main.js",
+  "author": "Digidenone <digidenone@gmail.com>",
+  "license": "MIT",
+  "private": true,
+  "homepage": "https://digidenone.is-a.dev",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/digidenone/tallysyncpro.git"
+  },
+  "bugs": {
+    "url": "https://github.com/digidenone/tallysyncpro/issues"
+  },
+  "keywords": [
+    "tally",
+    "excel",
+    "erp",
+    "integration",
+    "electron",
+    "desktop",
+    "odbc",
+    "accounting"
+  ],
+  "scripts": {
+    "start": "electron .",
+    "dev": "concurrently \"cd frontend && npm run dev\" \"wait-on http://localhost:5173 && electron .\"",
+    "build": "cd frontend && npm run build",    "build:electron": "npm run build && electron-builder --dir","pack": "npm run build && electron-builder --dir",    "dist:win": "npm run build && electron-builder --win --x64 --publish=never",
+    "dist:win:all": "npm run build && electron-builder --win --x64 --publish=never","clean": "rimraf dist && rimraf dist && rimraf frontend/dist && rimraf logs",
+    "postinstall": "electron-builder install-app-deps"
+  },
+  "dependencies": {
+    "chokidar": "^3.6.0",
+    "crypto-js": "^4.2.0",
+    "electron-log": "^5.0.1",
+    "electron-store": "^8.2.0",
+    "electron-updater": "^6.1.7",
+    "fs-extra": "^11.2.0",
+    "glob": "^10.3.10",
+    "moment": "^2.30.1",
+    "node-cron": "^4.1.0",
+    "node-json-db": "^2.3.1",
+    "nodemailer": "^6.9.8",
+    "odbc": "^2.4.9",
+    "uuid": "^9.0.1",
+    "xlsx": "^0.18.5"
+  },  "devDependencies": {
+    "concurrently": "^7.6.0",
+    "electron": "^29.0.0",
+    "electron-builder": "^24.13.3",
+    "rimraf": "^5.0.5",
+    "wait-on": "^7.2.0"
+  },
+  "build": {
+    "appId": "com.digidenone.tallysyncpro",
+    "productName": "TallySyncPro",
+    "copyright": "Copyright © 2025 Digidenone",    "directories": {
+      "output": "dist"
+    },    "files": [
+      "electron-main.js",
+      "electron-preload.js",
+      "frontend/dist/**/*",
+      "src/**/*",
+      "assets/**/*",
+      {
+        "from": "node_modules",
+        "filter": [
+          "!**/sqlite3/**",
+          "!**/better-sqlite3/**",
+          "!**/node-sass/**",
+          "!**/sharp/**",
+          "!**/canvas/**",
+          "!**/keytar/**",
+          "!**/robotjs/**",
+          "!**/native-*/**",
+          "!**/build/Release/**",
+          "!**/build/Debug/**"
+        ]
+      }
+    ],    "win": {
+      "target": [        {          "target": "exe",          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "requestedExecutionLevel": "requireAdministrator",
+      "artifactName": "${productName}-${version}-${arch}.${ext}",
+      "extraFiles": [
+        {
+          "from": "assets/TallySyncPro.exe.manifest",
+          "to": "TallySyncPro.exe.manifest"
+        }
+      ]
+    },
+    "publish": null
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=8.0.0"
+  }
+}

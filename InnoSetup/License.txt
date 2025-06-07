@@ -1,0 +1,33 @@
+LICENSE AGREEMENT FOR TALLYSYNCPRO
+
+IMPORTANT - READ CAREFULLY: This license agreement ("Agreement") is a legal agreement between you (either an individual or a single entity) and Digidenone for the software product identified above, which includes computer software and may include associated media, printed materials, and "online" or electronic documentation ("Software").
+
+BY INSTALLING, COPYING, OR OTHERWISE USING THE SOFTWARE, YOU AGREE TO BE BOUND BY THE TERMS OF THIS AGREEMENT. IF YOU DO NOT AGREE TO THE TERMS OF THIS AGREEMENT, DO NOT INSTALL OR USE THE SOFTWARE.
+
+SOFTWARE LICENSE
+
+The Software is protected by copyright laws and international copyright treaties, as well as other intellectual property laws and treaties. The Software is licensed, not sold.
+
+GRANT OF LICENSE
+This Agreement grants you the following rights:
+- Installation and Use: You may install and use one copy of the Software on a single computer.
+- Storage/Network Use: You may also store or install a copy of the Software on a storage device, such as a network server, used only to install or run the Software on your other computers over an internal network.
+
+DESCRIPTION OF OTHER RIGHTS AND LIMITATIONS
+- Limitations on Reverse Engineering, Decompilation, and Disassembly: You may not reverse engineer, decompile, or disassemble the Software.
+- Separation of Components: The Software is licensed as a single product. Its component parts may not be separated for use on more than one computer.
+- Rental: You may not rent, lease, or lend the Software.
+- Support Services: Digidenone may provide you with support services related to the Software.
+
+COPYRIGHT
+All title and copyrights in and to the Software (including but not limited to any images, photographs, animations, video, audio, music, text, and "applets" incorporated into the Software), the accompanying printed materials, and any copies of the Software are owned by Digidenone.
+
+WARRANTY DISCLAIMER
+THE SOFTWARE IS PROVIDED "AS IS" WITHOUT WARRANTY OF ANY KIND. DIGIDENONE DISCLAIMS ALL WARRANTIES, EITHER EXPRESS OR IMPLIED, INCLUDING THE WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+
+LIMITATION OF LIABILITY
+IN NO EVENT SHALL DIGIDENONE BE LIABLE FOR ANY DAMAGES WHATSOEVER (INCLUDING, WITHOUT LIMITATION, DAMAGES FOR LOSS OF BUSINESS PROFITS, BUSINESS INTERRUPTION, LOSS OF BUSINESS INFORMATION, OR ANY OTHER PECUNIARY LOSS) ARISING OUT OF THE USE OF OR INABILITY TO USE THIS SOFTWARE.
+
+This Agreement is governed by the laws of India.
+
+Copyright © 2025 Digidenone. All rights reserved.

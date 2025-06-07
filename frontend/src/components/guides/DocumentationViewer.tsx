@@ -1,8 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card';
 import { Button } from '../ui/button';
 import { Badge } from '../ui/badge';
-import { BookOpen, FileText, Download, ExternalLink, Search, ChevronRight } from 'lucide-react';
+import { BookOpen, FileText, Download, Search } from 'lucide-react';
 import { Input } from '../ui/input';
 
 // Markdown rendering utility
@@ -23,9 +23,8 @@ interface DocSection {
   id: string;
   title: string;
   description: string;
-  category: 'getting-started' | 'user-guide' | 'technical' | 'api';
+  category: 'getting-started' | 'user-guide' | 'technical';
   content: string;
-  lastUpdated: string;
 }
 
 const DocumentationViewer = () => {
@@ -108,7 +107,6 @@ Comprehensive error handling and reporting:
 
 ### Support Resources
 - Built-in help documentation
-- Video tutorials and guides
 - Community forums and FAQ
 - Technical support contact information
 
@@ -118,8 +116,7 @@ Comprehensive error handling and reporting:
 - Use provided Excel templates
 - Validate data before final import
 - Keep regular backups of processed files
-`,
-      lastUpdated: '2024-12-15'
+      `
     },
     {
       id: 'installation',
@@ -176,13 +173,6 @@ Comprehensive error handling and reporting:
 4. Set appropriate port and security settings
 5. Test connection from TallySyncPro
 
-### Excel Plugin Installation
-1. Close all Excel instances
-2. Run TallySyncPro as administrator
-3. Navigate to Settings > Excel Integration
-4. Install Excel plugin components
-5. Restart Excel to activate plugin
-
 ## Verification and Testing
 
 ### System Health Check
@@ -190,14 +180,7 @@ Comprehensive error handling and reporting:
 - Verify all components are properly installed
 - Test sample data import
 - Confirm Tally integration works correctly
-
-### License Activation
-- Enter your license key in Settings
-- Activate online or offline as needed
-- Verify license status and validity
-- Register for updates and support
-`,
-      lastUpdated: '2024-12-15'
+      `
     },
     {
       id: 'technical-specs',
@@ -330,203 +313,8 @@ Response: Generated XML content
 - Graceful degradation
 - User notification system
 - Detailed error reporting
-`,
-      lastUpdated: '2024-12-15'
+      `
     },
-    {
-      id: 'api-reference',
-      title: 'API Reference',
-      description: 'Complete API documentation for developers',
-      category: 'api',
-      content: `
-# API Reference
-
-## Base URL
-\`\`\`
-http://localhost:3001/api
-\`\`\`
-
-## Authentication
-All API requests require a valid API key in the request headers:
-\`\`\`
-Authorization: Bearer YOUR_API_KEY
-Content-Type: application/json
-\`\`\`
-
-## Endpoints
-
-### Upload Excel File
-Upload and process Excel files for Tally integration.
-
-**Endpoint:** \`POST /upload\`
-
-**Parameters:**
-- \`file\` (file): Excel file to process
-- \`template\` (string): Template type identifier
-- \`options\` (object): Processing options
-
-**Response:**
-\`\`\`json
-{
-  "success": true,
-  "data": {
-    "fileId": "uuid",
-    "rowCount": 150,
-    "status": "processed"
-  }
-}
-\`\`\`
-
-### Validate Data
-Validate processed data against Tally requirements.
-
-**Endpoint:** \`POST /validate\`
-
-**Parameters:**
-\`\`\`json
-{
-  "fileId": "uuid",
-  "rules": {
-    "required": ["name", "amount"],
-    "format": {
-      "amount": "numeric",
-      "date": "yyyy-mm-dd"
-    }
-  }
-}
-\`\`\`
-
-**Response:**
-\`\`\`json
-{
-  "success": true,
-  "validation": {
-    "valid": true,
-    "errors": [],
-    "warnings": []
-  }
-}
-\`\`\`
-
-### Generate XML
-Generate Tally-compatible XML from processed data.
-
-**Endpoint:** \`POST /generate-xml\`
-
-**Parameters:**
-\`\`\`json
-{
-  "fileId": "uuid",
-  "format": "tally",
-  "options": {
-    "compress": true,
-    "validate": true
-  }
-}
-\`\`\`
-
-**Response:**
-\`\`\`json
-{
-  "success": true,
-  "xml": {
-    "content": "XML_CONTENT",
-    "size": 15420,
-    "checksum": "md5_hash"
-  }
-}
-\`\`\`
-
-### Sync with Tally
-Directly sync data with Tally ERP 9.
-
-**Endpoint:** \`POST /sync\`
-
-**Parameters:**
-\`\`\`json
-{
-  "fileId": "uuid",
-  "company": "CompanyName",
-  "options": {
-    "backup": true,
-    "validate": true
-  }
-}
-\`\`\`
-
-**Response:**
-\`\`\`json
-{
-  "success": true,
-  "sync": {
-    "status": "completed",
-    "records": 150,
-    "errors": 0
-  }
-}
-\`\`\`
-
-## Error Responses
-All errors return a consistent format:
-
-\`\`\`json
-{
-  "success": false,
-  "error": {
-    "code": "E001",
-    "message": "File format not supported",
-    "details": "Only .xlsx files are supported"
-  }
-}
-\`\`\`
-
-## Rate Limiting
-API requests are limited to:
-- 100 requests per minute for file operations
-- 1000 requests per minute for data queries
-- 10 concurrent file uploads
-
-## SDKs and Libraries
-
-### JavaScript/Node.js
-\`\`\`javascript
-const TallySyncAPI = require('tallysync-api');
-const client = new TallySyncAPI('YOUR_API_KEY');
-
-// Upload file
-const result = await client.upload(fileBuffer, 'ledger');
-console.log(result.fileId);
-\`\`\`
-
-### Python
-\`\`\`python
-import tallysync
-
-client = tallysync.Client('YOUR_API_KEY')
-result = client.upload('file.xlsx', template='ledger')
-print(result.file_id)
-\`\`\`
-
-## Webhooks
-Configure webhooks to receive real-time notifications:
-
-**Events:**
-- \`file.uploaded\`: File processing completed
-- \`validation.completed\`: Data validation finished
-- \`sync.completed\`: Tally sync finished
-- \`error.occurred\`: Processing error
-
-**Configuration:**
-\`\`\`json
-{
-  "url": "https://your-app.com/webhook",
-  "events": ["file.uploaded", "sync.completed"],
-  "secret": "webhook_secret"
-}
-\`\`\`
-`,
-      lastUpdated: '2024-12-15'
-    }
   ];
 
   const categories = [
@@ -534,153 +322,58 @@ Configure webhooks to receive real-time notifications:
     { value: 'getting-started', label: 'Getting Started' },
     { value: 'user-guide', label: 'User Guide' },
     { value: 'technical', label: 'Technical' },
-    { value: 'api', label: 'API Reference' }
   ];
 
-  // FIXED PDF GENERATION FUNCTION
+  // ELECTRON-OPTIMIZED PDF GENERATION
   const downloadPDF = async (docId: string) => {
     try {
       const doc = documentationSections.find(d => d.id === docId);
-      if (!doc) return;
-
-      // Create a new window with the content formatted for PDF
-      const printWindow = window.open('', '_blank');
-      if (!printWindow) {
-        alert('Please allow popups for PDF generation');
+      if (!doc) {
+        alert('Document not found');
         return;
-      }
-
-      // Enhanced HTML content with better PDF styling
-      const htmlContent = `
-<!DOCTYPE html>
+      }      // Create optimized HTML content for PDF
+      const htmlContent = `<!DOCTYPE html>
 <html>
 <head>
     <title>${doc.title} - TallySyncPro Documentation</title>
+    <meta charset="UTF-8">
     <style>
-        @media print {
-            body { margin: 0; }
-            .no-print { display: none; }
-        }
-        @page {
-            margin: 1in;
-            size: A4;
-        }
+        @page { margin: 1in; size: A4; }
         body { 
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
-            line-height: 1.6; 
-            color: #333;
-            max-width: 800px;
-            margin: 0 auto;
-            padding: 20px;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            line-height: 1.6; color: #333; max-width: 800px; margin: 0 auto; padding: 20px; background: white;
         }
-        .header { 
-            text-align: center; 
-            margin-bottom: 40px; 
-            border-bottom: 3px solid #2563eb;
-            padding-bottom: 20px;
-        }
-        .header h1 { 
-            color: #2563eb; 
-            font-size: 28px;
-            margin: 0 0 10px 0;
-        }
-        .header h2 { 
-            color: #1e40af; 
-            font-size: 22px;
-            margin: 0 0 10px 0;
-            font-weight: normal;
-        }
-        .date { 
-            color: #666; 
-            font-size: 14px;
-            margin: 10px 0;
-        }
-        .content h1 { 
-            color: #2563eb; 
-            border-bottom: 2px solid #e5e7eb;
-            padding-bottom: 8px;
-            margin-top: 30px;
-        }
-        .content h2 { 
-            color: #1e40af; 
-            margin-top: 25px;
-            margin-bottom: 15px;
-        }
-        .content h3 { 
-            color: #1e3a8a; 
-            margin-top: 20px;
-            margin-bottom: 10px;
-        }
-        .content p { 
-            margin-bottom: 12px;
-            text-align: justify;
-        }
-        .content ul, .content ol {
-            margin: 10px 0;
-            padding-left: 25px;
-        }
-        .content li {
-            margin-bottom: 5px;
-        }
-        .content code {
-            background: #f3f4f6;
-            padding: 2px 6px;
-            border-radius: 3px;
-            font-family: 'Courier New', monospace;
-            font-size: 0.9em;
-        }
-        .content pre {
-            background: #f8f9fa;
-            border: 1px solid #e9ecef;
-            border-radius: 5px;
-            padding: 15px;
-            overflow-x: auto;
-            margin: 15px 0;
-        }
-        .footer { 
-            margin-top: 50px; 
-            text-align: center; 
-            font-size: 12px; 
-            color: #666;
-            border-top: 1px solid #e5e7eb;
-            padding-top: 20px;
-        }
-        .download-btn {
-            background: #2563eb;
-            color: white;
-            border: none;
-            padding: 12px 24px;
-            border-radius: 5px;
-            cursor: pointer;
-            margin: 10px;
-            font-size: 16px;
-            font-weight: 500;
-        }
-        .download-btn:hover {
-            background: #1d4ed8;
-        }
-        .close-btn {
-            background: #dc2626;
-        }
-        .close-btn:hover {
-            background: #b91c1c;
-        }
+        .header { text-align: center; margin-bottom: 40px; border-bottom: 3px solid #2563eb; padding-bottom: 20px; }
+        .header h1 { color: #2563eb; font-size: 28px; margin: 0 0 10px 0; }
+        .header h2 { color: #1e40af; font-size: 20px; margin: 0 0 10px 0; }
+        .date { color: #666; font-size: 14px; }
+        .content h1 { color: #2563eb; border-bottom: 2px solid #e5e7eb; padding-bottom: 8px; margin-top: 30px; }
+        .content h2 { color: #1e40af; margin-top: 25px; margin-bottom: 15px; }
+        .content h3 { color: #1e3a8a; margin-top: 20px; margin-bottom: 10px; }
+        .content p { margin-bottom: 12px; text-align: justify; }
+        .content ul, .content ol { margin: 10px 0; padding-left: 25px; }
+        .content li { margin-bottom: 5px; }
+        .content code { background: #f3f4f6; padding: 2px 6px; border-radius: 3px; font-family: monospace; font-size: 0.9em; }
+        .content pre { background: #f8f9fa; border: 1px solid #e9ecef; border-radius: 5px; padding: 15px; overflow-x: auto; margin: 15px 0; }
+        .footer { margin-top: 50px; text-align: center; font-size: 12px; color: #666; border-top: 1px solid #e5e7eb; padding-top: 20px; }
+        .controls { background: #f0f9ff; border: 1px solid #0ea5e9; border-radius: 6px; padding: 15px; margin-bottom: 20px; text-align: center; }
+        .btn { background: #2563eb; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; margin: 5px; font-size: 14px; }
+        .btn:hover { background: #1d4ed8; }
+        .btn-danger { background: #dc2626; }
+        .btn-danger:hover { background: #b91c1c; }
     </style>
 </head>
 <body>
-    <div class="no-print" style="position: fixed; top: 20px; right: 20px; z-index: 1000; background: rgba(255,255,255,0.9); padding: 10px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);">
-        <button class="download-btn" onclick="window.print()">📄 Save as PDF</button>
-        <button class="download-btn close-btn" onclick="window.close()">✖ Close</button>
+    <div class="controls">
+        <p><strong>📄 Save this document as PDF</strong></p>
+        <button class="btn" onclick="window.print()">🖨️ Print/Save as PDF</button>
+        <button class="btn btn-danger" onclick="window.close()">❌ Close</button>
     </div>
     
     <div class="header">
         <h1>TallySyncPro Documentation</h1>
         <h2>${doc.title}</h2>
-        <div class="date">Generated on: ${new Date().toLocaleDateString('en-US', { 
-          year: 'numeric', 
-          month: 'long', 
-          day: 'numeric' 
-        })}</div>
+        <div class="date">Generated: ${new Date().toLocaleDateString()}</div>
     </div>
     
     <div class="content">
@@ -688,33 +381,63 @@ Configure webhooks to receive real-time notifications:
     </div>
     
     <div class="footer">
-        <p><strong>TallySyncPro</strong> - Professional Tally ERP Integration Platform</p>
+        <p><strong>TallySyncPro</strong> - Professional Tally ERP Integration</p>
         <p>© 2025 Digidenone. All rights reserved.</p>
-        <p>Document ID: ${docId} | Version: 1.0</p>
+        <p>Document: ${docId} | Generated: ${new Date().toISOString()}</p>
     </div>
 
     <script>
-        // Instructions for saving as PDF
         window.onload = function() {
-            setTimeout(() => {
-                window.focus();
-                console.log('Ready to save as PDF. Click the "Save as PDF" button or use Ctrl+P');
-            }, 1000);
+            window.focus();
+            console.log('PDF viewer ready. Press Ctrl+P to print/save as PDF');
         };
+        
+        document.addEventListener('keydown', function(e) {
+            if (e.ctrlKey && e.key === 'p') {
+                e.preventDefault();
+                window.print();
+            }
+            if (e.key === 'Escape') {
+                window.close();
+            }
+        });
     </script>
 </body>
 </html>`;
 
-      // Write content to the new window
-      printWindow.document.write(htmlContent);
-      printWindow.document.close();
-
-      // Show success message
-      console.log(`PDF generation window opened for: ${doc.title}`);
+      // For Electron app: Create a new window
+      const newWindow = window.open('', '_blank', 'width=900,height=700,scrollbars=yes');
+      
+      if (newWindow) {
+        newWindow.document.write(htmlContent);
+        newWindow.document.close();
+        newWindow.focus();
+        console.log(`📄 PDF viewer opened for: ${doc.title}`);
+        
+        // Show user instructions
+        setTimeout(() => {
+          alert('PDF viewer opened! In the new window:\\n\\n1. Click "Print/Save as PDF" button\\n2. Or press Ctrl+P\\n3. Choose "Save as PDF" as destination\\n4. Select your download location and save');
+        }, 1000);
+      } else {
+        // Fallback for Electron: Use current window
+        const printDiv = document.createElement('div');
+        printDiv.innerHTML = htmlContent;
+        printDiv.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:white;z-index:9999;overflow:auto;';
+        
+        const closeBtn = document.createElement('button');
+        closeBtn.innerHTML = '❌ Close';
+        closeBtn.style.cssText = 'position:absolute;top:20px;right:20px;padding:10px;background:#dc2626;color:white;border:none;border-radius:5px;cursor:pointer;z-index:10000;';
+        closeBtn.onclick = () => document.body.removeChild(printDiv);
+        
+        printDiv.appendChild(closeBtn);
+        document.body.appendChild(printDiv);
+        
+        console.log(`📄 PDF viewer displayed for: ${doc.title}`);
+      }
       
     } catch (error) {
       console.error('PDF generation failed:', error);
-      alert('Failed to generate PDF. Please try again.');
+      alert(`Failed to generate PDF: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   };
 
@@ -774,7 +497,7 @@ Configure webhooks to receive real-time notifications:
           <h1 className="text-3xl font-bold">Documentation Center</h1>
         </div>
         <p className="text-muted-foreground max-w-2xl mx-auto">
-          Comprehensive guides, technical documentation, and API references for TallySyncPro
+          Comprehensive guides and documentation for TallySyncPro
         </p>
       </div>
 
@@ -828,9 +551,6 @@ Configure webhooks to receive real-time notifications:
             </CardHeader>
             <CardContent className="pt-0">
               <div className="flex items-center justify-between">
-                <span className="text-xs text-muted-foreground">
-                  Updated: {new Date(doc.lastUpdated).toLocaleDateString()}
-                </span>
                 <div className="flex gap-2">
                   <Button 
                     onClick={() => downloadPDF(doc.id)}
@@ -845,7 +565,7 @@ Configure webhooks to receive real-time notifications:
                     variant="outline" 
                     size="sm"
                   >
-                    View <ChevronRight className="h-3 w-3 ml-1" />
+                    Read More
                   </Button>
                 </div>
               </div>
@@ -853,16 +573,6 @@ Configure webhooks to receive real-time notifications:
           </Card>
         ))}
       </div>
-
-      {filteredDocs.length === 0 && (
-        <div className="text-center py-12">
-          <FileText className="h-16 w-16 mx-auto text-muted-foreground mb-4" />
-          <h3 className="text-lg font-semibold mb-2">No documentation found</h3>
-          <p className="text-muted-foreground">
-            Try adjusting your search terms or category filter
-          </p>
-        </div>
-      )}
     </div>
   );
 };

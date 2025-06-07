@@ -1,0 +1,228 @@
+# ================================================================
+# TallySync Pro - Git Ignore Configuration
+# ================================================================
+# This file specifies intentionally untracked files that Git should ignore.
+# Author: Digidenone
+# Project: TallySyncPro - Excel to Tally ERP Integration
+# ================================================================
+
+# ================================================================
+# NODE.JS & NPM
+# ================================================================
+# Dependencies
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# Package managers
+.pnpm-store/
+.yarn/
+.npm/
+
+# ================================================================
+# BUILD OUTPUTS
+# ================================================================
+# Vite build outputs
+dist/
+dist-electron/
+*.local
+
+# Electron build outputs
+build/
+out/
+release/
+app/
+
+# TypeScript build outputs
+*.tsbuildinfo
+tsconfig.tsbuildinfo
+
+# Build artifacts
+*.exe
+*.dmg
+*.pkg
+*.deb
+*.rpm
+*.tar.gz
+*.zip
+
+# ================================================================
+# DEVELOPMENT FILES
+# ================================================================
+# Environment variables
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# IDE and Editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+desktop.ini
+
+# ================================================================
+# TALLY & DATABASE FILES
+# ================================================================
+# Tally data files
+*.tdb
+*.tly
+*.dat
+
+# Database files
+*.sqlite
+*.sqlite3
+*.db
+
+# ODBC logs
+odbc.log
+*.odbc
+
+# ================================================================
+# LOGS & TEMPORARY FILES
+# ================================================================
+# Log files
+logs/
+*.log
+
+# Runtime data
+pids/
+*.pid
+*.seed
+*.pid.lock
+
+# Coverage directory used by tools like istanbul
+coverage/
+*.lcov
+
+# nyc test coverage
+.nyc_output/
+
+# ================================================================
+# CACHE & TEMPORARY
+# ================================================================
+# Dependency directories
+.cache/
+.parcel-cache/
+.eslintcache
+.stylelintcache
+
+# Temporary folders
+tmp/
+temp/
+.tmp/
+
+# ================================================================
+# SECURITY & SENSITIVE DATA
+# ================================================================
+# API keys and secrets
+.env.secret
+secrets.json
+config/secrets.js
+
+# Certificates
+*.pem
+*.key
+*.cert
+*.crt
+
+# ================================================================
+# TESTING
+# ================================================================
+# Test results
+test-results/
+coverage/
+.nyc_output/
+
+# ================================================================
+# DOCUMENTATION BUILD
+# ================================================================
+# Documentation build
+docs/_build/
+docs/build/
+
+# ================================================================
+# ELECTRON SPECIFIC
+# ================================================================
+# Electron build cache
+.electron/
+.webpack/
+
+# Auto-generated files
+electron-builder.json5
+
+# ================================================================
+# PROJECT SPECIFIC
+# ================================================================
+# Upload directories
+uploads/
+downloads/
+
+# Generated templates
+templates/generated/
+
+# Backup files
+*.backup
+*.bak
+
+# User specific data
+user-data/
+user-config/
+
+# ================================================================
+# MISC
+# ================================================================
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Microbundle cache
+.rpt2_cache/
+.rts2_cache_cjs/
+.rts2_cache_es/
+.rts2_cache_umd/
+
+# Optional npm cache directory
+.npm/
+
+# Optional eslint cache
+.eslintcache
+
+# Optional stylelint cache
+.stylelintcache
+
+# Optional REPL history
+.node_repl_history
+
+# Output of 'npm pack'
+*.tgz
+
+# Yarn Integrity file
+.yarn-integrity
+
+# parcel-bundler cache (https://parceljs.org/)
+.cache/
+.parcel-cache/
+
+# End of .gitignore
