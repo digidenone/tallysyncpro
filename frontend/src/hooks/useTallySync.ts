@@ -55,6 +55,11 @@ declare global {
       saveConfig: (config: any) => Promise<{ success: boolean; error?: string }>;
       getConfig: () => Promise<{ success: boolean; config: any; error?: string }>;
     };
+    electronAPI?: {
+      on: (channel: string, callback: (event: any) => void) => void;
+      off: (channel: string, callback: (event: any) => void) => void;
+      invoke: (channel: string, ...args: any[]) => Promise<any>;
+    };
   }
 }
 
@@ -99,15 +104,28 @@ export const useTallySync = (options?: UseTallySyncOptions) => {
   const [isConnecting, setIsConnecting] = useState(false);
   const [isConnected, setIsConnected] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
+  const [syncProgress, setSyncProgress] = useState(0);
+  const [syncStatus, setSyncStatus] = useState('');
+  const [syncDetails, setSyncDetails] = useState<any>(null);
+  
+  // Performance metrics
+  const [lastSyncDuration, setLastSyncDuration] = useState<number | null>(null);
+  const [syncHistory, setSyncHistory] = useState<any[]>([]);
+  
+  // Advanced connection state
+  const [connectionLatency, setConnectionLatency] = useState<number | null>(null);
+  const [tallyVersion, setTallyVersion] = useState<string>('');
+  const [companyInfo, setCompanyInfo] = useState<any>(null);
+
   const [lastChecked, setLastChecked] = useState<Date | null>(null);
   const [connectionError, setConnectionError] = useState<string | null>(null);
   const [tallyConfig, setTallyConfig] = useState<TallyConfig>({
     server: '',
-    port: 9000,
+    port: 9000,    
     company: '',
     username: '',
     password: '',
-    tallyVersion: 'Latest',
+    tallyVersion: 'Tally ERP 9',
     dataPath: '',
     financialYear: '',
   });
@@ -207,6 +225,9 @@ export const useTallySync = (options?: UseTallySyncOptions) => {
     }
 
     setIsSyncing(true);
+    setSyncProgress(0);
+    setSyncStatus('');
+    setSyncDetails(null);
     try {
       const result = await window.tallyAPI.importVouchers({
         data,
@@ -233,6 +254,117 @@ export const useTallySync = (options?: UseTallySyncOptions) => {
       setIsSyncing(false);
     }
   };
+  // Enhanced sync function with progress tracking
+  const syncWithProgress = useCallback(async (data: TallyVoucherData[], syncOptions?: {
+    onProgress?: (progress: number, status: string) => void;
+    onComplete?: (result: any) => void;
+    onError?: (error: string) => void;
+  }) => {
+    if (!data || data.length === 0) {
+      toast.error('No data to sync');
+      return false;
+    }
+
+    setIsSyncing(true);
+    setSyncProgress(0);
+    setSyncStatus('Preparing sync...');
+    const startTime = Date.now();
+
+    try {
+      // Validate connection first
+      const connectionResult = await window.tallyAPI.testConnection(tallyConfig);
+      if (!connectionResult.connected) {
+        throw new Error(connectionResult.error || 'Not connected to Tally');
+      }
+
+      setSyncStatus('Syncing data...');
+      setSyncProgress(10);
+
+      const result = await window.tallyAPI.importVouchers(data);
+      
+      if (result.success) {
+        const duration = Date.now() - startTime;
+        setLastSyncDuration(duration);
+        setSyncProgress(100);
+        setSyncStatus('Sync completed');
+        
+        // Update sync history
+        const syncRecord = {
+          timestamp: new Date().toISOString(),
+          duration,
+          recordCount: data.length,
+          success: true
+        };
+        setSyncHistory(prev => [syncRecord, ...prev.slice(0, 9)]);
+        
+        toast.success(`Successfully synced ${data.length} records in ${(duration / 1000).toFixed(1)}s`);
+        options?.onSuccess?.(`Synced ${data.length} records successfully`);
+        syncOptions?.onComplete?.(result);
+        
+        return true;
+      } else {
+        throw new Error(result.error || 'Sync failed');
+      }
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Error during sync';
+      setSyncStatus('Sync failed');
+      
+      // Add to sync history
+      const syncRecord = {
+        timestamp: new Date().toISOString(),
+        duration: Date.now() - startTime,
+        recordCount: data.length,
+        success: false,
+        error: errorMessage
+      };
+      setSyncHistory(prev => [syncRecord, ...prev.slice(0, 9)]);
+      
+      toast.error(errorMessage);
+      syncOptions?.onError?.(errorMessage);
+      return false;
+    } finally {
+      setIsSyncing(false);
+      // Reset progress after 3 seconds
+      setTimeout(() => {
+        setSyncProgress(0);
+        setSyncStatus('');
+      }, 3000);
+    }
+  }, [tallyConfig, options]);
+
+  // Listen for sync progress events
+  useEffect(() => {
+    const handleSyncProgress = (event: any) => {
+      setSyncProgress(event.progress || 0);
+      setSyncStatus(event.status || '');
+      setSyncDetails(event.details || null);
+    };
+
+    const handleSyncComplete = (event: any) => {
+      setSyncProgress(100);
+      setSyncStatus('Complete');
+      setLastSyncDuration(event.duration || null);
+      setSyncHistory(prev => [event, ...prev.slice(0, 9)]); // Keep last 10 syncs
+      
+      // Reset after delay
+      setTimeout(() => {
+        setSyncProgress(0);
+        setSyncStatus('');
+        setSyncDetails(null);
+      }, 3000);
+    };    // Listen for backend sync events (if available)
+    if (window.electronAPI?.on) {
+      window.electronAPI.on('syncProgress', handleSyncProgress);
+      window.electronAPI.on('syncComplete', handleSyncComplete);
+      
+      return () => {
+        if (window.electronAPI?.off) {
+          window.electronAPI.off('syncProgress', handleSyncProgress);
+          window.electronAPI.off('syncComplete', handleSyncComplete);
+        }
+      };
+    }
+  }, []);
 
   // Auto-check connection status periodically
   useEffect(() => {
@@ -249,17 +381,58 @@ export const useTallySync = (options?: UseTallySyncOptions) => {
 
     return () => clearInterval(interval);
   }, [isSyncing]);
-
   return {
+    // Connection state
     isConnecting,
     isConnected,
-    isSyncing,
-    lastChecked,
     connectionError,
+    connectionLatency,
+    lastChecked,
+    
+    // Sync state
+    isSyncing,
+    syncProgress,
+    syncStatus,
+    syncDetails,
+    
+    // Performance metrics
+    lastSyncDuration,
+    syncHistory,
+    
+    // Tally information
+    tallyVersion,
+    companyInfo,
+    
+    // Configuration
     tallyConfig,
+    
+    // Methods
     testConnection,
     saveConfig,
     analyzeExcelData,
-    syncData
+    syncData,
+    syncWithProgress,
+    
+    // Computed values
+    connectionHealth: useMemo(() => {
+      if (!isConnected) return 'disconnected';
+      if (connectionLatency && connectionLatency > 5000) return 'poor';
+      if (connectionLatency && connectionLatency > 2000) return 'fair';
+      return 'good';
+    }, [isConnected, connectionLatency]),
+    
+    syncPerformance: useMemo(() => {
+      if (syncHistory.length === 0) return null;
+      const successfulSyncs = syncHistory.filter(s => s.success);
+      const avgDuration = successfulSyncs.reduce((acc, s) => acc + s.duration, 0) / successfulSyncs.length;
+      const successRate = (successfulSyncs.length / syncHistory.length) * 100;
+      
+      return {
+        avgDuration: Math.round(avgDuration),
+        successRate: Math.round(successRate),
+        totalSyncs: syncHistory.length,
+        successfulSyncs: successfulSyncs.length
+      };
+    }, [syncHistory])
   };
 };

@@ -367,7 +367,7 @@ class TallyService {
     username: '',
     password: '',
     dsn: 'TallyODBC64_9000',
-    tallyVersion: 'Latest',
+    tallyVersion: 'Tally ERP 9',
     dataPath: '',
     financialYear: '',
   };

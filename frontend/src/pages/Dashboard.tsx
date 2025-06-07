@@ -89,11 +89,11 @@ import NotificationService from '@/services/NotificationService';
 import MobileWarning from '@/components/MobileWarning';
 import realTimeDataService, { DashboardMetrics, ActivityItem } from '@/services/RealTimeDataService';
 
-const Dashboard = () => {
-  const { 
-    isConnected, 
+const Dashboard = () => {  const {
+    isConnected,
     isConnecting, 
     isSyncing,
+    syncStatus,
     tallyConfig,
     lastChecked,
     connectionError,
@@ -363,10 +363,9 @@ const Dashboard = () => {
               </div>
               <Progress value={syncProgress} className="w-full" />
             </div>
-            
-            <div className="space-y-2">
+              <div className="space-y-2">
               <Badge variant={isConnected ? "default" : "secondary"} className="w-full justify-center">
-                {isConnected ? "Sync Active" : "Sync Paused"}
+                {isSyncing ? "Syncing..." : (syncStatus && syncStatus !== 'Idle' ? syncStatus : (isConnected ? "Ready" : "Disconnected"))}
               </Badge>
             </div>
           </CardContent>
