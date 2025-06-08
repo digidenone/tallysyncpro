@@ -1,3 +1,5 @@
+<div align="center">
+  
 # 🚀 TallySyncPro
 
 <div align="center">
