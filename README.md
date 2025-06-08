@@ -780,12 +780,12 @@ logs/
 
 | Role | Name | Responsibilities | GitHub Profile |
 |------|------|-----------------|----------------|
-| **CEO & Backend Lead** | **Chirag Nahata** | Backend Development | [![GitHub](https://img.shields.io/badge/GitHub-chiragnahata-blue?style=flat-square&logo=github)](https://github.com/chiragnahata) |
-| **CTO & Frontend Lead** | **Snigdha Ghosh** | Frontend Development & UI/UX | [![GitHub](https://img.shields.io/badge/GitHub-snig--code16-blue?style=flat-square&logo=github)](https://github.com/snig-code16) |
-| **Co-CEO & Legal Side Handling** | **Ariyan Bhattarcharjee** | Legal Matters & Strategic Planning | [![GitHub](https://img.shields.io/badge/GitHub-hub--ARIYAN-blue?style=flat-square&logo=github)](https://github.com/hub-ARIYAN) |
-| **COO & Documentation** | **Shamonnoy Halder** | Documentation & CRM Management | [![GitHub](https://img.shields.io/badge/GitHub-Shamonnoy-blue?style=flat-square&logo=github)](https://github.com/Shamonnoy-Halder) |
-| **Developer & QA** | **Somyadip Ghosh** | Testing & Research | [![GitHub](https://img.shields.io/badge/GitHub-somyadipghosh-blue?style=flat-square&logo=github)](https://github.com/somyadipghosh) |
-| **Sales & Client Relations** | **Hitesh Roy** | Client Coordination & Sales | [![GitHub](https://img.shields.io/badge/GitHub-Hitesh--Roy-blue?style=flat-square&logo=github)](https://github.com/Hitesh-Roy) |
+| **CEO & Backend Lead** | **Chirag Nahata** | Backend Development | [![GitHub](https://img.shields.io/badge/GitHub-Chirag--Nahata-blue?style=flat-square&logo=github)](https://github.com/chiragnahata) |
+| **CTO & Frontend Lead** | **Snigdha Ghosh** | Frontend Development & UI/UX | [![GitHub](https://img.shields.io/badge/GitHub-Snigdha--Ghosh-blue?style=flat-square&logo=github)](https://github.com/snig-code16) |
+| **Co-CEO & Legal Side Handling** | **Ariyan Bhattarcharjee** | Legal Matters & Strategic Planning | [![GitHub](https://img.shields.io/badge/GitHub-hub--Ariyan--Bhattarcharjee-blue?style=flat-square&logo=github)](https://github.com/hub-ARIYAN) |
+| **COO & Documentation** | **Shamonnoy Halder** | Documentation & CRM Management | [![GitHub](https://img.shields.io/badge/GitHub-Shamonnoy--Halder-blue?style=flat-square&logo=github)](https://github.com/Shamonnoy) |
+| **Developer & QA** | **Somyadip Ghosh** | Testing & Research | [![GitHub](https://img.shields.io/badge/GitHub-Somyadip--Ghosh-blue?style=flat-square&logo=github)](https://github.com/somyadipghosh) |
+| **Sales & Client Relations** | **Hitesh Roy** | Client Coordination & Sales | [![GitHub](https://img.shields.io/badge/GitHub-Hitesh--Roy-blue?style=flat-square&logo=github)](https://github.com/hitwesh) |
 
 ### **Team Expertise**
 
