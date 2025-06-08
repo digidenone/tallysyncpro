@@ -1,4 +1,4 @@
-# � TallySyncPro - Professional Documentation
+# TallySyncPro - Professional Documentation
 
 Welcome to the comprehensive documentation for TallySyncPro, an enterprise-grade desktop application that bridges Excel data management with Tally ERP 9 systems.
 
