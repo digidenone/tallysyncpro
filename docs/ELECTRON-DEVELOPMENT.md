@@ -476,46 +476,6 @@ module.exports = new Logger();
 }
 ```
 
-### Auto-updater Integration
-```javascript
-// auto-updater.js
-const { autoUpdater } = require('electron-updater');
-const { dialog } = require('electron');
-
-class AutoUpdater {
-  constructor(mainWindow) {
-    this.mainWindow = mainWindow;
-    this.setupUpdater();
-  }
-  
-  setupUpdater() {
-    autoUpdater.checkForUpdatesAndNotify();
-    
-    autoUpdater.on('update-available', (info) => {
-      dialog.showMessageBox(this.mainWindow, {
-        type: 'info',
-        title: 'Update Available',
-        message: `Version ${info.version} is available. It will be downloaded in the background.`,
-        buttons: ['OK']
-      });
-    });
-    
-    autoUpdater.on('update-downloaded', (info) => {
-      dialog.showMessageBox(this.mainWindow, {
-        type: 'info',
-        title: 'Update Ready',
-        message: 'Update downloaded. Application will restart to apply the update.',
-        buttons: ['Restart Now', 'Later']
-      }).then((result) => {
-        if (result.response === 0) {
-          autoUpdater.quitAndInstall();
-        }
-      });
-    });
-  }
-}
-```
-
 ### Distribution Configuration
 ```json
 {
