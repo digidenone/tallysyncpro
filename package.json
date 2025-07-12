@@ -27,8 +27,12 @@
   "scripts": {
     "start": "electron .",
     "dev": "concurrently \"cd frontend && npm run dev\" \"wait-on http://localhost:5173 && electron .\"",
-    "build": "cd frontend && npm run build",    "build:electron": "npm run build && electron-builder --dir","pack": "npm run build && electron-builder --dir",    "dist:win": "npm run build && electron-builder --win --x64 --publish=never",
-    "dist:win:all": "npm run build && electron-builder --win --x64 --publish=never","clean": "rimraf dist && rimraf dist && rimraf frontend/dist && rimraf logs",
+    "build": "cd frontend && npm run build",
+    "build:electron": "npm run build && electron-builder --dir",
+    "pack": "npm run build && electron-builder --dir",
+    "dist:win": "npm run build && electron-builder --win --x64 --publish=never",
+    "dist:win:all": "npm run build && electron-builder --win --x64 --publish=never",
+    "clean": "rimraf dist && rimraf dist && rimraf frontend/dist && rimraf logs",
     "postinstall": "electron-builder install-app-deps"
   },
   "dependencies": {
@@ -46,9 +50,10 @@
     "odbc": "^2.4.9",
     "uuid": "^9.0.1",
     "xlsx": "^0.18.5"
-  },  "devDependencies": {
+  },
+  "devDependencies": {
     "concurrently": "^7.6.0",
-    "electron": "^29.0.0",
+    "electron": "^29.4.6",
     "electron-builder": "^24.13.3",
     "rimraf": "^5.0.5",
     "wait-on": "^7.2.0"
@@ -56,9 +61,11 @@
   "build": {
     "appId": "com.digidenone.tallysyncpro",
     "productName": "TallySyncPro",
-    "copyright": "Copyright © 2025 Digidenone",    "directories": {
+    "copyright": "Copyright © 2025 Digidenone",
+    "directories": {
       "output": "dist"
-    },    "files": [
+    },
+    "files": [
       "electron-main.js",
       "electron-preload.js",
       "frontend/dist/**/*",
@@ -79,8 +86,12 @@
           "!**/build/Debug/**"
         ]
       }
-    ],    "win": {
-      "target": [        {          "target": "exe",          "arch": [
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "exe",
+          "arch": [
             "x64"
           ]
         }

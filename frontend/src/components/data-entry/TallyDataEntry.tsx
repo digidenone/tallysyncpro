@@ -69,6 +69,7 @@ import {
 } from 'lucide-react';
 import tallySyncService from '@/services/TallySyncService';
 import RealTemplateDownloader from './RealTemplateDownloader';
+import { GSTCalculator } from './GSTCalculator';
 import { toast } from 'sonner';
 import realTimeDataService from '../../services/RealTimeDataService';
 import automatedTallyService, { AutoSyncConfig } from '../../services/AutomatedTallyService';
@@ -98,81 +99,70 @@ const TALLY_TEMPLATES: Template[] = [
   {
     name: 'Sales Invoice',
     type: 'sales',
-    description: 'Create sales invoices for your customers',
+    description: 'Create sales invoices with GST calculations',
     fields: [
+      { name: 'Supplier Invoice No', key: 'supplierInvoiceNo', type: 'string', required: true, example: 'Sale/11' },
       { name: 'Date', key: 'date', type: 'date', required: true, example: '2024-01-15' },
-      { name: 'Invoice No', key: 'invoiceNo', type: 'string', required: true, example: 'SI001' },
-      { name: 'Customer Name', key: 'customer', type: 'string', required: true, example: 'ABC Corp' },
-      { name: 'Item Name', key: 'itemName', type: 'string', required: true, example: 'Product A' },
-      { name: 'Quantity', key: 'quantity', type: 'number', required: true, example: '10' },
-      { name: 'Rate', key: 'rate', type: 'number', required: true, example: '100.00' },
-      { name: 'Amount', key: 'amount', type: 'number', required: true, example: '1000.00' },
-      { name: 'Tax Rate (%)', key: 'taxRate', type: 'number', required: false, example: '18' },
-      { name: 'Tax Amount', key: 'taxAmount', type: 'number', required: false, example: '180.00' },
-      { name: 'Total Amount', key: 'totalAmount', type: 'number', required: true, example: '1180.00' }
+      { name: 'To (Party Name)', key: 'partyName', type: 'string', required: true, example: 'A B MEDICAL STORES' },
+      { name: 'Purchase 5%', key: 'purchase5', type: 'number', required: false, example: '100' },
+      { name: 'Purchase 12%', key: 'purchase12', type: 'number', required: false, example: '100' },
+      { name: 'Purchase 18%', key: 'purchase18', type: 'number', required: false, example: '100' },
+      { name: 'CGST', key: 'cgst', type: 'number', required: false, example: '17.5' },
+      { name: 'SGST', key: 'sgst', type: 'number', required: false, example: '17.5' },
+      { name: 'TOTAL', key: 'total', type: 'number', required: true, example: '335' },
+      { name: 'Narration', key: 'narration', type: 'string', required: false, example: 'being Medicine sale' }
     ]
   },
   {
     name: 'Purchase Invoice',
     type: 'purchase',
-    description: 'Record purchase invoices from suppliers',
+    description: 'Record purchase invoices with GST calculations',
     fields: [
+      { name: 'Supplier Invoice No', key: 'supplierInvoiceNo', type: 'string', required: true, example: 'AV/10' },
       { name: 'Date', key: 'date', type: 'date', required: true, example: '2024-01-15' },
-      { name: 'Invoice No', key: 'invoiceNo', type: 'string', required: true, example: 'PI001' },
-      { name: 'Supplier Name', key: 'supplier', type: 'string', required: true, example: 'XYZ Suppliers' },
-      { name: 'Item Name', key: 'itemName', type: 'string', required: true, example: 'Raw Material A' },
-      { name: 'Quantity', key: 'quantity', type: 'number', required: true, example: '50' },
-      { name: 'Rate', key: 'rate', type: 'number', required: true, example: '50.00' },
-      { name: 'Amount', key: 'amount', type: 'number', required: true, example: '2500.00' },
-      { name: 'Tax Rate (%)', key: 'taxRate', type: 'number', required: false, example: '18' },
-      { name: 'Tax Amount', key: 'taxAmount', type: 'number', required: false, example: '450.00' },
-      { name: 'Total Amount', key: 'totalAmount', type: 'number', required: true, example: '2950.00' }
-    ]
-  },
-  {
-    name: 'Payment Voucher',
-    type: 'payment',
-    description: 'Record payments made to suppliers and others',
-    fields: [
-      { name: 'Date', key: 'date', type: 'date', required: true, example: '2024-01-15' },
-      { name: 'Voucher No', key: 'voucherNo', type: 'string', required: true, example: 'PV001' },
-      { name: 'Party Name', key: 'party', type: 'string', required: true, example: 'ABC Supplier' },
-      { name: 'Amount', key: 'amount', type: 'number', required: true, example: '5000.00' },
-      { name: 'Payment Mode', key: 'paymentMode', type: 'select', required: true, 
-        options: ['Cash', 'Bank Transfer', 'Cheque', 'Credit Card', 'Online Transfer'] },
-      { name: 'Bank Account', key: 'bankAccount', type: 'string', required: false, example: 'SBI Main Account' },
-      { name: 'Reference', key: 'reference', type: 'string', required: false, example: 'Invoice Payment' },
-      { name: 'Narration', key: 'narration', type: 'string', required: false, example: 'Payment for services' }
-    ]
-  },
-  {
-    name: 'Receipt Voucher',
-    type: 'receipt',
-    description: 'Record receipts from customers and others',
-    fields: [
-      { name: 'Date', key: 'date', type: 'date', required: true, example: '2024-01-15' },
-      { name: 'Voucher No', key: 'voucherNo', type: 'string', required: true, example: 'RV001' },
-      { name: 'Party Name', key: 'party', type: 'string', required: true, example: 'ABC Customer' },
-      { name: 'Amount', key: 'amount', type: 'number', required: true, example: '10000.00' },
-      { name: 'Receipt Mode', key: 'receiptMode', type: 'select', required: true,
-        options: ['Cash', 'Bank Transfer', 'Cheque', 'Credit Card', 'Online Transfer'] },
-      { name: 'Bank Account', key: 'bankAccount', type: 'string', required: false, example: 'SBI Main Account' },
-      { name: 'Reference', key: 'reference', type: 'string', required: false, example: 'Invoice Collection' },
-      { name: 'Narration', key: 'narration', type: 'string', required: false, example: 'Payment received' }
+      { name: 'To (Party Name)', key: 'partyName', type: 'string', required: true, example: 'AAKANSHA SUPER MARKET' },
+      { name: 'Purchase 5%', key: 'purchase5', type: 'number', required: false, example: '100' },
+      { name: 'Purchase 12%', key: 'purchase12', type: 'number', required: false, example: '100' },
+      { name: 'Purchase 18%', key: 'purchase18', type: 'number', required: false, example: '100' },
+      { name: 'CGST', key: 'cgst', type: 'number', required: false, example: '17.5' },
+      { name: 'SGST', key: 'sgst', type: 'number', required: false, example: '17.5' },
+      { name: 'TOTAL', key: 'total', type: 'number', required: true, example: '335' },
+      { name: 'Narration', key: 'narration', type: 'string', required: false, example: 'Being the Medicine Purchase in credit' }
     ]
   },
   {
     name: 'Journal Voucher',
     type: 'journal',
-    description: 'Record journal entries for adjustments and transfers',
+    description: 'Record journal entries with GST calculations',
+    fields: [
+      { name: 'Supplier Invoice No', key: 'supplierInvoiceNo', type: 'string', required: true, example: 'AV/10' },
+      { name: 'Date', key: 'date', type: 'date', required: true, example: '2024-01-15' },
+      { name: 'To (Party Name)', key: 'partyName', type: 'string', required: true, example: 'AAKANSHA SUPER MARKET' },
+      { name: 'Purchase 5%', key: 'purchase5', type: 'number', required: false, example: '100' },
+      { name: 'Purchase 12%', key: 'purchase12', type: 'number', required: false, example: '100' },
+      { name: 'Purchase 18%', key: 'purchase18', type: 'number', required: false, example: '100' },
+      { name: 'CGST', key: 'cgst', type: 'number', required: false, example: '17.5' },
+      { name: 'SGST', key: 'sgst', type: 'number', required: false, example: '17.5' },
+      { name: 'TOTAL', key: 'total', type: 'number', required: true, example: '335' },
+      { name: 'Narration', key: 'narration', type: 'string', required: false, example: 'Being the Medicine Purchase in credit' }
+    ]
+  },
+  {
+    name: 'Bank Voucher',
+    type: 'bank',
+    description: 'Record bank transactions, receipts and payments',
     fields: [
       { name: 'Date', key: 'date', type: 'date', required: true, example: '2024-01-15' },
-      { name: 'Voucher No', key: 'voucherNo', type: 'string', required: true, example: 'JV001' },
-      { name: 'Debit Ledger', key: 'debitLedger', type: 'string', required: true, example: 'Office Expenses' },
-      { name: 'Credit Ledger', key: 'creditLedger', type: 'string', required: true, example: 'Cash in Hand' },
-      { name: 'Amount', key: 'amount', type: 'number', required: true, example: '1000.00' },
-      { name: 'Narration', key: 'narration', type: 'string', required: true, example: 'Office supplies purchased' },
-      { name: 'Reference', key: 'reference', type: 'string', required: false, example: 'Bill No. 123' }
+      { name: 'Vch Type', key: 'vchType', type: 'select', required: true, 
+        options: ['Receipt', 'Payment', 'Contra', 'Journal'], example: 'Receipt' },
+      { name: 'Narration', key: 'narration', type: 'string', required: false, example: 'TRAN DATE -(MMDD) 0401 TRAN TIME - (HHMMSS) 19564' },
+      { name: 'Cheque No.', key: 'chequeNo', type: 'string', required: false, example: '123456' },
+      { name: 'Ledger', key: 'ledger', type: 'string', required: true, example: 'A B MEDICAL STORES' },
+      { name: 'DR/CR', key: 'drCr', type: 'select', required: false, 
+        options: ['Dr', 'Cr'], example: 'Dr' },
+      { name: 'Single Amount', key: 'singleAmount', type: 'number', required: false, example: '1000' },
+      { name: 'Withdrawal', key: 'withdrawal', type: 'number', required: false, example: '0' },
+      { name: 'Deposit', key: 'deposit', type: 'number', required: false, example: '100000' }
     ]
   }
 ];
@@ -975,17 +965,16 @@ export function TallyDataEntry() {
               <CardDescription>
                 Choose the type of data you want to enter for Tally ERP integration
               </CardDescription>
-            </CardHeader>            <CardContent>              <Tabs value={selectedTemplate?.type || ''} onValueChange={handleTemplateSelect}>
-                <TabsList className="grid w-full grid-cols-5 gap-1">
-                  {TALLY_TEMPLATES.map((template) => (
-                    <TabsTrigger
-                      key={template.type}
-                      value={template.type}
-                      className="text-xs"
-                    >
-                      {template.name}
-                    </TabsTrigger>
-                  ))}
+            </CardHeader>            <CardContent>              <Tabs value={selectedTemplate?.type || ''} onValueChange={handleTemplateSelect}>          <TabsList className="grid w-full grid-cols-4 gap-1">
+            {TALLY_TEMPLATES.map((template) => (
+              <TabsTrigger
+                key={template.type}
+                value={template.type}
+                className="text-xs"
+              >
+                {template.name}
+              </TabsTrigger>
+            ))}
                 </TabsList>
             
             {TALLY_TEMPLATES.map((template) => (
@@ -1075,6 +1064,32 @@ export function TallyDataEntry() {
               </div></div>
           </CardContent>
         </Card>
+      )}
+
+      {/* GST Calculator for Purchase and Sales templates */}
+      {selectedTemplate && (selectedTemplate.type === 'purchase' || selectedTemplate.type === 'sales') && (
+        <GSTCalculator 
+          templateType={selectedTemplate?.type === 'sales' ? 'sales' : 'purchase'}
+          onCalculationChange={(calculation) => {
+            // Auto-populate GST fields in the current row if available
+            const currentRow = dataRows[dataRows.length - 1];
+            if (currentRow && selectedTemplate) {
+              // Update fields based on template type
+              if (selectedTemplate.type === 'sales') {
+                updateRowField(currentRow.id, 'sales5', calculation.amount5);
+                updateRowField(currentRow.id, 'sales12', calculation.amount12);
+                updateRowField(currentRow.id, 'sales18', calculation.amount18);
+              } else if (selectedTemplate.type === 'purchase') {
+                updateRowField(currentRow.id, 'purchase5', calculation.amount5);
+                updateRowField(currentRow.id, 'purchase12', calculation.amount12);
+                updateRowField(currentRow.id, 'purchase18', calculation.amount18);
+              }
+              updateRowField(currentRow.id, 'cgst', calculation.cgst);
+              updateRowField(currentRow.id, 'sgst', calculation.sgst);
+              updateRowField(currentRow.id, 'total', calculation.total);
+            }
+          }}
+        />
       )}
         </TabsContent>
 

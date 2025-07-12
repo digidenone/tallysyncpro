@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -6,7 +6,6 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { 
   Download, 
   FileSpreadsheet, 
-  ExternalLink, 
   CheckCircle,
   AlertCircle
 } from 'lucide-react';
@@ -19,119 +18,77 @@ interface RealTemplate {
   category: 'masters' | 'vouchers';
   apiEndpoint: string;
   size?: string;
-  lastUpdated?: string;
 }
 
 const REAL_TEMPLATES: RealTemplate[] = [
   {
-    id: 'accounting-masters',
-    name: 'All Accounting Masters',
-    file: 'AllAccountingMasters.xlsx',
-    description: 'Complete template for importing all types of accounting masters including ledgers, groups, cost categories, and more into Tally ERP',
-    category: 'masters',
-    apiEndpoint: '/api/templates/real?template=accounting-masters',
-    size: '45 KB',
-    lastUpdated: '2024-12-15'
+    id: 'sales',
+    name: 'Sales Invoice Template',
+    file: 'Sale.xlsx',
+    description: 'Template for sales invoices with GST calculations including 5%, 12%, and 18% tax rates, CGST, SGST calculations',
+    category: 'vouchers',
+    apiEndpoint: '/api/templates/real?template=sales',
+    size: '12 KB'
   },
   {
-    id: 'accounting-vouchers',
-    name: 'Accounting Vouchers',
-    file: 'AccountingVouchers.xlsx',
-    description: 'Template for importing various types of accounting vouchers including sales, purchase, payment, receipt, and journal entries into Tally ERP',
+    id: 'purchase',
+    name: 'Purchase Invoice Template',
+    file: 'Purchase.xlsx',
+    description: 'Template for purchase invoices with GST calculations including 5%, 12%, and 18% tax rates, CGST, SGST calculations',
     category: 'vouchers',
-    apiEndpoint: '/api/templates/real?template=accounting-vouchers',
-    size: '38 KB',
-    lastUpdated: '2024-12-15'
+    apiEndpoint: '/api/templates/real?template=purchase',
+    size: '12 KB'
+  },
+  {
+    id: 'journal',
+    name: 'Journal Voucher Template',
+    file: 'Journal.xlsx',
+    description: 'Template for journal entries with GST calculations for adjustments and transfers',
+    category: 'vouchers',
+    apiEndpoint: '/api/templates/real?template=journal',
+    size: '12 KB'
+  },
+  {
+    id: 'bank',
+    name: 'Bank Transaction Template',
+    file: 'Bank.xlsx',
+    description: 'Template for bank transactions including receipts, payments, withdrawals, and deposits with proper voucher types',
+    category: 'vouchers',
+    apiEndpoint: '/api/templates/real?template=bank',
+    size: '12 KB'
+  },
+  {
+    id: 'masters-complete',
+    name: 'Master Data Templates (Complete)',
+    file: 'AllAccountingMasters.xlsx',
+    description: 'Complete master data template including Chart of Accounts, Ledgers, Groups, Cost Centers, Stock Items, Units of Measure, Godowns, Currencies, and more for comprehensive Tally ERP setup with GST compliance',
+    category: 'masters',
+    apiEndpoint: '/downloads/AllAccountingMasters.xlsx',
+    size: '48 KB'
+  },
+  {
+    id: 'vouchers-complete',
+    name: 'Accounting Vouchers (Complete)',
+    file: 'AccountingVouchers.xlsx',
+    description: 'Comprehensive voucher template supporting Sales, Purchase, Payment, Receipt, Journal, Contra, Debit Note, Credit Note, and Bank transactions with advanced GST handling and TDS support',
+    category: 'vouchers',
+    apiEndpoint: '/downloads/AccountingVouchers.xlsx',
+    size: '42 KB'
+  },
+  {
+    id: 'template-bundle',
+    name: 'TallySync Excel Templates (Bundle)',
+    file: 'TallySync-Excel-Templates.zip',
+    description: 'Complete bundle containing all Excel templates, sample data, user guides, and field mapping documentation for seamless Tally ERP integration',
+    category: 'masters',
+    apiEndpoint: '/downloads/TallySync-Excel-Templates.zip',
+    size: '125 KB'
   }
 ];
 
 export function RealTemplateDownloader() {
   const [downloading, setDownloading] = useState<string | null>(null);
-  const [status, setStatus] = useState<{ type: 'success' | 'error' | 'info'; message: string } | null>(null);  const downloadTemplate = async (template: RealTemplate) => {
-    setDownloading(template.id);
-    setStatus(null);
-
-    try {
-      // First, try to download from physical templates folder
-      let downloadSuccessful = false;
-      
-      // Try the physical template file first
-      if (template.id === 'accounting-masters' || template.id === 'accounting-vouchers') {
-        try {
-          const physicalPath = `/templates/${template.file}`;
-          const response = await fetch(physicalPath);
-          
-          if (response.ok) {
-            const blob = await response.blob();
-            downloadBlob(blob, template.file);
-            downloadSuccessful = true;
-            
-            setStatus({ 
-              type: 'success', 
-              message: `Successfully downloaded official ${template.name} template` 
-            });
-          }
-        } catch (physicalError) {
-          console.log('Physical template not found, trying API...');
-        }
-      }
-      
-      // If physical download failed, try API
-      if (!downloadSuccessful) {
-        try {          const apiUrl = template.apiEndpoint.includes('real') 
-            ? `/api/templates?action=download&type=${template.id.includes('vouchers') ? 'sales' : 'ledger'}`
-            : template.apiEndpoint;
-            
-          const response = await fetch(apiUrl);
-          
-          if (response.ok) {
-            const blob = await response.blob();
-            downloadBlob(blob, template.file);
-            downloadSuccessful = true;
-            
-            setStatus({ 
-              type: 'success', 
-              message: `Successfully downloaded ${template.name} from API` 
-            });
-          }
-        } catch (apiError) {
-          console.log('API download failed, creating fallback...');
-        }
-      }
-      
-      // If both failed, create fallback
-      if (!downloadSuccessful) {
-        const fallbackBlob = createFallbackTemplate(template);
-        downloadBlob(fallbackBlob, template.file);
-        
-        setStatus({ 
-          type: 'success', 
-          message: `Downloaded ${template.name} (offline version - suitable for data entry)` 
-        });
-      }
-      
-    } catch (error) {
-      console.error('All download methods failed:', error);
-      
-      // Last resort: create fallback template
-      try {
-        const fallbackBlob = createFallbackTemplate(template);
-        downloadBlob(fallbackBlob, template.file);
-        
-        setStatus({ 
-          type: 'success', 
-          message: `Downloaded ${template.name} (offline version - basic template)` 
-        });
-      } catch (fallbackError) {
-        setStatus({ 
-          type: 'error', 
-          message: `Failed to download ${template.name}. Please check your connection and try again.` 
-        });
-      }
-    } finally {
-      setDownloading(null);
-    }
-  };
+  const [status, setStatus] = useState<{ type: 'success' | 'error' | 'info'; message: string } | null>(null);
 
   const downloadBlob = (blob: Blob, filename: string) => {
     const url = window.URL.createObjectURL(blob);
@@ -150,7 +107,7 @@ export function RealTemplateDownloader() {
     
     if (template.category === 'vouchers') {
       csvContent = `Date,Voucher No,Party Name,Amount,Particulars,Narration
-2024-01-15,V001,Sample Party,1000.00,Sample Item,Sample transaction
+2025-01-15,V001,Sample Party,1000.00,Sample Item,Sample transaction
 ,,,,Instructions:,
 ,,,,1. Fill data in rows below,
 ,,,,2. Keep headers unchanged,
@@ -167,6 +124,81 @@ Sample Ledger,Sundry Debtors,0.00,Customer,Sample Address,1234567890
     }
     
     return new Blob([csvContent], { type: 'text/csv' });
+  };
+
+  const downloadTemplate = async (template: RealTemplate) => {
+    setDownloading(template.id);
+    setStatus(null);
+
+    try {
+      let downloadSuccessful = false;
+      
+      // Try to download from the public downloads folder first
+      try {
+        const physicalPath = template.apiEndpoint.startsWith('/downloads/') 
+          ? template.apiEndpoint 
+          : `/downloads/${template.file}`;
+        
+        const response = await fetch(physicalPath);
+        
+        if (response.ok) {
+          const blob = await response.blob();
+          downloadBlob(blob, template.file);
+          downloadSuccessful = true;
+          
+          setStatus({ 
+            type: 'success', 
+            message: `Successfully downloaded ${template.name}! Ready to import into Tally ERP 9.` 
+          });
+        }
+      } catch (physicalError) {
+        console.log('Physical template not found, trying API fallback...');
+      }
+      
+      // If physical download failed, try API fallback
+      if (!downloadSuccessful) {
+        try {          
+          const apiUrl = template.apiEndpoint.includes('real') 
+            ? `/api/templates?action=download&type=${template.id.includes('vouchers') ? 'sales' : 'ledger'}`
+            : template.apiEndpoint;
+            
+          const response = await fetch(apiUrl);
+          
+          if (response.ok) {
+            const blob = await response.blob();
+            downloadBlob(blob, template.file);
+            downloadSuccessful = true;
+            
+            setStatus({ 
+              type: 'success', 
+              message: `Successfully downloaded ${template.name} from API` 
+            });
+          }
+        } catch (apiError) {
+          console.log('API download failed, creating fallback template...');
+        }
+      }
+      
+      // If both failed, create fallback template
+      if (!downloadSuccessful) {
+        const fallbackBlob = createFallbackTemplate(template);
+        downloadBlob(fallbackBlob, template.file);
+        
+        setStatus({ 
+          type: 'info', 
+          message: `Downloaded fallback ${template.name}. For the latest templates, ensure Tally ERP 9 service is running.` 
+        });
+      }
+
+    } catch (error) {
+      console.error('Download failed:', error);
+      setStatus({ 
+        type: 'error', 
+        message: `Failed to download ${template.name}. Please try again or contact support.` 
+      });
+    } finally {
+      setDownloading(null);
+    }
   };
 
   const downloadAllTemplates = async () => {
@@ -213,6 +245,15 @@ Sample Ledger,Sundry Debtors,0.00,Customer,Sample Address,1234567890
               Download All Templates
             </Button>
           </div>
+
+          {status && (
+            <Alert className="mb-4">
+              {status.type === 'success' && <CheckCircle className="h-4 w-4" />}
+              {status.type === 'error' && <AlertCircle className="h-4 w-4" />}
+              {status.type === 'info' && <AlertCircle className="h-4 w-4" />}
+              <AlertDescription>{status.message}</AlertDescription>
+            </Alert>
+          )}
         </CardContent>
       </Card>
 
@@ -241,11 +282,6 @@ Sample Ledger,Sundry Debtors,0.00,Customer,Sample Address,1234567890
                       {template.size && (
                         <span className="text-xs text-muted-foreground">
                           📏 {template.size}
-                        </span>
-                      )}
-                      {template.lastUpdated && (
-                        <span className="text-xs text-muted-foreground">
-                          📅 Updated {template.lastUpdated}
                         </span>
                       )}
                     </div>
@@ -301,11 +337,6 @@ Sample Ledger,Sundry Debtors,0.00,Customer,Sample Address,1234567890
                           📏 {template.size}
                         </span>
                       )}
-                      {template.lastUpdated && (
-                        <span className="text-xs text-muted-foreground">
-                          📅 Updated {template.lastUpdated}
-                        </span>
-                      )}
                     </div>
                   </div>
                   <Button
@@ -338,37 +369,40 @@ Sample Ledger,Sundry Debtors,0.00,Customer,Sample Address,1234567890
           <CardTitle className="text-lg">How to Use Templates</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="space-y-3 text-sm">
-            <div className="flex items-start space-x-3">
-              <div className="bg-blue-100 text-blue-600 rounded-full w-6 h-6 flex items-center justify-center text-xs font-semibold">1</div>
-              <p>Download the appropriate template for your data type (Masters or Vouchers)</p>
+          <div className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <h4 className="font-medium">Master Data Templates</h4>
+                <ul className="text-sm text-muted-foreground space-y-1">
+                  <li>• Download the complete master data template</li>
+                  <li>• Fill in your Chart of Accounts, Ledgers, and Groups</li>
+                  <li>• Include Stock Items, Units, and Cost Centers</li>
+                  <li>• Upload to TallySync Pro for validation</li>
+                  <li>• Import directly into Tally ERP 9</li>
+                </ul>
+              </div>
+              <div className="space-y-2">
+                <h4 className="font-medium">Voucher Templates</h4>
+                <ul className="text-sm text-muted-foreground space-y-1">
+                  <li>• Choose the appropriate voucher template</li>
+                  <li>• Fill in transaction details with GST rates</li>
+                  <li>• Use the GST calculator for automatic calculations</li>
+                  <li>• Validate data before upload</li>
+                  <li>• Sync transactions to Tally ERP 9</li>
+                </ul>
+              </div>
             </div>
-            <div className="flex items-start space-x-3">
-              <div className="bg-blue-100 text-blue-600 rounded-full w-6 h-6 flex items-center justify-center text-xs font-semibold">2</div>
-              <p>Open the Excel file and fill in your data following the column headers and sample data</p>
-            </div>            <div className="flex items-start space-x-3">
-              <div className="bg-blue-100 text-blue-600 rounded-full w-6 h-6 flex items-center justify-center text-xs font-semibold">3</div>
-              <p>Save the completed file and upload it through the Data Entry section above</p>
-            </div>
-            <div className="flex items-start space-x-3">
-              <div className="bg-blue-100 text-blue-600 rounded-full w-6 h-6 flex items-center justify-center text-xs font-semibold">4</div>
-              <p>TallySyncPro will automatically sync the processed data with your Tally ERP</p>
-            </div>
+            
+            <Alert>
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription>
+                <strong>Important:</strong> Always backup your Tally data before importing new information. 
+                Use the template bundle for comprehensive documentation and sample data.
+              </AlertDescription>
+            </Alert>
           </div>
         </CardContent>
       </Card>
-
-      {/* Status Messages */}
-      {status && (
-        <Alert className={status.type === 'error' ? 'border-red-200 bg-red-50' : 
-                         status.type === 'success' ? 'border-green-200 bg-green-50' : 
-                         'border-blue-200 bg-blue-50'}>
-          {status.type === 'error' ? <AlertCircle className="h-4 w-4" /> : <CheckCircle className="h-4 w-4" />}
-          <AlertDescription>
-            {status.message}
-          </AlertDescription>
-        </Alert>
-      )}
     </div>
   );
 }

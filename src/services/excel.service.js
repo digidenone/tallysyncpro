@@ -25,6 +25,7 @@ const XLSX = require('xlsx');
 const path = require('path');
 const fs = require('fs').promises;
 const EventEmitter = require('events');
+const moment = require('moment');
 
 /**
  * Excel Service Class
@@ -546,6 +547,179 @@ class ExcelService extends EventEmitter {
    */
   clearCache() {
     this.templateCache.clear();
+  }
+  
+  /**
+   * Detect template type from Excel file columns
+   */
+  async detectTemplateType(filePath) {
+    try {
+      const result = await this.readExcelFile(filePath, { 
+        useFirstRowAsHeader: true,
+        parseOptions: { range: 1 } // Read only header row
+      });
+      
+      if (!result.success) {
+        return { success: false, error: result.error };
+      }
+      
+      const columns = Object.keys(result.data[0] || {});
+      
+      // Template matching patterns
+      const templatePatterns = {
+        'sales': [
+          'Supplier invoice no', 'Date', 'To ( Party Name )', 
+          'Purchase 5%', 'Purchase 12%', 'Purchase 18%', 
+          'CGST', 'SGST', 'TOTAL', 'Narration'
+        ],
+        'purchase': [
+          'Supplier invoice no', 'Date', 'To ( Party Name )', 
+          'Purchase 5%', 'Purchase 12%', 'Purchase 18%', 
+          'CGST', 'SGST', 'TOTAL', 'Narration'
+        ],
+        'journal': [
+          'Supplier invoice no', 'Date', 'To ( Party Name )', 
+          'Purchase 5%', 'Purchase 12%', 'Purchase 18%', 
+          'CGST', 'SGST', 'TOTAL', 'Narration'
+        ],
+        'bank': [
+          'Date*', 'Vch Type*', 'Narration', 'Cheque No.', 
+          'Ledger*', 'DR/CR', 'Single Amount', 'Withdrawal*', 'Deposit*'
+        ]
+      };
+      
+      // Find best matching template
+      let bestMatch = null;
+      let highestScore = 0;
+      
+      for (const [templateType, expectedColumns] of Object.entries(templatePatterns)) {
+        const matchedColumns = expectedColumns.filter(col => 
+          columns.some(fileCol => 
+            fileCol.toLowerCase().trim() === col.toLowerCase().trim() ||
+            fileCol.toLowerCase().trim().includes(col.toLowerCase().trim()) ||
+            col.toLowerCase().trim().includes(fileCol.toLowerCase().trim())
+          )
+        );
+        
+        const score = matchedColumns.length / expectedColumns.length;
+        
+        if (score > highestScore && score > 0.6) { // At least 60% match
+          highestScore = score;
+          bestMatch = templateType;
+        }
+      }
+      
+      return {
+        success: true,
+        templateType: bestMatch,
+        confidence: highestScore,
+        detectedColumns: columns,
+        suggestions: bestMatch ? `Detected as ${bestMatch} template with ${Math.round(highestScore * 100)}% confidence` : 'No template pattern detected'
+      };
+      
+    } catch (error) {
+      return { success: false, error: error.message };
+    }
+  }
+
+  /**
+   * Validate data against template structure
+   */
+  async validateAgainstTemplate(data, templateType) {
+    try {
+      const templatePatterns = {
+        'sales': {
+          required: ['Supplier invoice no', 'Date', 'To ( Party Name )', 'TOTAL'],
+          optional: ['Purchase 5%', 'Purchase 12%', 'Purchase 18%', 'CGST', 'SGST', 'Narration'],
+          calculations: {
+            'TOTAL': ['Purchase 5%', 'Purchase 12%', 'Purchase 18%', 'CGST', 'SGST']
+          }
+        },
+        'purchase': {
+          required: ['Supplier invoice no', 'Date', 'To ( Party Name )', 'TOTAL'],
+          optional: ['Purchase 5%', 'Purchase 12%', 'Purchase 18%', 'CGST', 'SGST', 'Narration'],
+          calculations: {
+            'TOTAL': ['Purchase 5%', 'Purchase 12%', 'Purchase 18%', 'CGST', 'SGST']
+          }
+        },
+        'journal': {
+          required: ['Supplier invoice no', 'Date', 'To ( Party Name )', 'TOTAL'],
+          optional: ['Purchase 5%', 'Purchase 12%', 'Purchase 18%', 'CGST', 'SGST', 'Narration'],
+          calculations: {
+            'TOTAL': ['Purchase 5%', 'Purchase 12%', 'Purchase 18%', 'CGST', 'SGST']
+          }
+        },
+        'bank': {
+          required: ['Date*', 'Vch Type*', 'Ledger*'],
+          optional: ['Narration', 'Cheque No.', 'DR/CR', 'Single Amount', 'Withdrawal*', 'Deposit*'],
+          calculations: {}
+        }
+      };
+      
+      const template = templatePatterns[templateType];
+      if (!template) {
+        return { success: false, error: `Unknown template type: ${templateType}` };
+      }
+      
+      const errors = [];
+      const warnings = [];
+      
+      // Validate each row
+      data.forEach((row, index) => {
+        const rowNum = index + 2; // Account for header row
+        
+        // Check required fields
+        template.required.forEach(field => {
+          const fieldValue = row[field];
+          if (!fieldValue || fieldValue.toString().trim() === '') {
+            errors.push(`Row ${rowNum}: ${field} is required but empty`);
+          }
+        });
+        
+        // Validate data types and formats
+        if (row['Date'] || row['Date*']) {
+          const dateField = row['Date'] || row['Date*'];
+          if (dateField && !moment(dateField).isValid()) {
+            errors.push(`Row ${rowNum}: Invalid date format`);
+          }
+        }
+        
+        // Validate numeric fields
+        const numericFields = ['Purchase 5%', 'Purchase 12%', 'Purchase 18%', 'CGST', 'SGST', 'TOTAL', 'Single Amount', 'Withdrawal*', 'Deposit*'];
+        numericFields.forEach(field => {
+          const value = row[field];
+          if (value !== undefined && value !== '' && isNaN(Number(value))) {
+            errors.push(`Row ${rowNum}: ${field} must be a valid number`);
+          }
+        });
+        
+        // Check calculations for non-bank templates
+        if (templateType !== 'bank' && template.calculations['TOTAL']) {
+          const calculatedTotal = template.calculations['TOTAL'].reduce((sum, field) => {
+            const value = Number(row[field]) || 0;
+            return sum + value;
+          }, 0);
+          
+          const actualTotal = Number(row['TOTAL']) || 0;
+          const tolerance = 0.01; // Allow 1 paisa difference
+          
+          if (Math.abs(calculatedTotal - actualTotal) > tolerance) {
+            warnings.push(`Row ${rowNum}: TOTAL (${actualTotal}) doesn't match calculated sum (${calculatedTotal.toFixed(2)})`);
+          }
+        }
+      });
+      
+      return {
+        success: errors.length === 0,
+        errors,
+        warnings,
+        validRows: data.length - errors.length,
+        totalRows: data.length
+      };
+      
+    } catch (error) {
+      return { success: false, error: error.message };
+    }
   }
 }
 
