@@ -153,3 +153,33 @@ For installation issues:
 2. Verify Tally ERP 9 configuration
 3. Review error messages
 4. Include system information in support request
+
+# Installation and Configuration
+
+This app prioritizes 32-bit ODBC connectivity to Tally ERP (ODBC DSN), then falls back to HTTP-XML Gateway, and finally to a 32-bit Python pyodbc helper.
+
+## Prerequisites
+- Tally ERP 9/Prime running with ODBC/Gateway enabled on port 9000.
+- 32-bit Tally ODBC Driver installed.
+- System DSN named `TallyODBC_9000` (32-bit), as shown in ODBC Administrator.
+- Optional: 32-bit Python (e.g., Python 3.11 x86) if you want the pyodbc fallback.
+
+## Environment Variables
+- TALLY_DSN: override DSN name (default: `TallyODBC_9000`).
+- TALLY_PYTHON32_PATH: path to 32-bit python.exe for pyodbc fallback.
+
+## Build Targets
+- Dev run: `npm start`
+- Windows x64 build: `npm run dist:win`
+- Windows 32-bit build: `npm run dist:win:ia32`
+- All Windows builds (x64 + ia32): `npm run dist:win:all`
+
+Note: To use the 32-bit System DSN directly via node-odbc, prefer the ia32 build.
+
+## Connection Order
+1. ODBC via DSN (32-bit) `TallyODBC_9000`
+2. HTTP XML to Gateway (port 9000)
+3. Python pyodbc using 32-bit Python against the DSN
+
+## Testing
+Use the app Settings/Dashboard “Test Tally Connection” button. You can also pass a DSN explicitly in code via `dsn: 'TallyODBC_9000'`.

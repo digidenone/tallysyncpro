@@ -1122,9 +1122,10 @@ ipcMain.handle('tally-test-connection', async (event, config) => {
   try {
     const host = (config && (config.host || config.server)) || 'localhost';
     const port = (config && (config.port || 9000)) || 9000;
-    const connStr = buildTallyConnString(config);
+    const dsnName = config?.dsn || process.env.TALLY_DSN || 'TallyODBC_9000';
+    const connStr = buildTallyConnString({ ...config, dsn: dsnName });
 
-    // 1) Try ODBC (Node) using provided/derived connStr
+    // Priority 1: ODBC (prefer DSN "TallyODBC_9000" which is 32-bit per screenshot)
     if (odbc) {
       try {
         const connection = await odbc.connect(connStr);
@@ -1132,40 +1133,33 @@ ipcMain.handle('tally-test-connection', async (event, config) => {
         catch { await connection.query('SELECT TOP 1 * FROM COMPANY'); }
         await connection.close();
         return { success: true, connected: true, method: 'odbc', connStr };
-      } catch (e) {
-        // Try DSN default as second ODBC attempt (useful when 32-bit DSN name is known)
+      } catch (primaryErr) {
+        // Try explicit DSN string if connectionString had a driver
         try {
-          const dsnName = config?.dsn || process.env.TALLY_DSN || 'TallyODBC_9000';
           const altConn = `DSN=${dsnName};`;
           const c2 = await odbc.connect(altConn);
           try { await c2.query('SELECT 1'); } catch { await c2.query('SELECT TOP 1 * FROM COMPANY'); }
           await c2.close();
           return { success: true, connected: true, method: 'odbc', connStr: altConn };
         } catch (_) {
-          // continue to next fallback
+          // Continue to HTTP
         }
       }
     }
 
-    // 2) HTTP XML
+    // Fallback 2: HTTP XML (Tally Gateway)
     try {
       const { ok } = await tryHttpXmlPing(host, port);
       if (ok) return { success: true, connected: true, method: 'http-xml' };
-    } catch (e) { /* continue */ }
+    } catch (_) {}
 
-    // 3) pyodbc fallback (requires 32-bit Python when DSN is 32-bit)
+    // Fallback 3: Python pyodbc (use 32-bit Python against DSN)
     try {
-      // Prefer DSN for 32-bit
-      const dsnName = config?.dsn || process.env.TALLY_DSN || 'TallyODBC_9000';
-      const pyConn = /DSN=/i.test(connStr) ? connStr : `DSN=${dsnName};`;
+      const pyConn = `DSN=${dsnName};`;
       const result = await tryPyodbcFallback(pyConn, 'SELECT 1');
-      if (result && result.success) {
-        return { success: true, connected: true, method: 'pyodbc' };
-      }
+      if (result && result.success) return { success: true, connected: true, method: 'pyodbc' };
       const result2 = await tryPyodbcFallback(pyConn, 'SELECT TOP 1 * FROM COMPANY');
-      if (result2 && result2.success) {
-        return { success: true, connected: true, method: 'pyodbc' };
-      }
+      if (result2 && result2.success) return { success: true, connected: true, method: 'pyodbc' };
       return { success: false, connected: false, error: result2?.error || result?.error || 'All methods failed' };
     } catch (e) {
       return { success: false, connected: false, error: e.message };
@@ -1177,11 +1171,11 @@ ipcMain.handle('tally-test-connection', async (event, config) => {
 
 ipcMain.handle('tally-get-status', async () => {
   try {
+    const dsnName = process.env.TALLY_DSN || 'TallyODBC_9000';
     const host = 'localhost';
     const port = 9000;
-    const connStr = buildTallyConnString({});
+    const connStr = buildTallyConnString({ dsn: dsnName });
 
-    // 1) ODBC first
     if (odbc) {
       try {
         const connection = await odbc.connect(connStr);
@@ -1189,30 +1183,23 @@ ipcMain.handle('tally-get-status', async () => {
         catch { await connection.query('SELECT TOP 1 * FROM COMPANY'); }
         await connection.close();
         return { success: true, connected: true };
-      } catch (e) {
-        // DSN fallback try
+      } catch {
         try {
-          const dsnName = process.env.TALLY_DSN || 'TallyODBC_9000';
           const altConn = `DSN=${dsnName};`;
           const c2 = await odbc.connect(altConn);
           try { await c2.query('SELECT 1'); } catch { await c2.query('SELECT TOP 1 * FROM COMPANY'); }
           await c2.close();
           return { success: true, connected: true };
-        } catch (_) {
-          // continue
-        }
+        } catch (_) {}
       }
     }
 
-    // 2) HTTP XML ping
     try {
       const { ok } = await tryHttpXmlPing(host, port);
       if (ok) return { success: true, connected: true };
     } catch (_) {}
 
-    // 3) pyodbc fallback
     try {
-      const dsnName = process.env.TALLY_DSN || 'TallyODBC_9000';
       const pyConn = `DSN=${dsnName};`;
       const result = await tryPyodbcFallback(pyConn, 'SELECT 1');
       if (result && result.success) return { success: true, connected: true };

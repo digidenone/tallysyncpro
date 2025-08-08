@@ -31,7 +31,8 @@
     "build:electron": "npm run build && electron-builder --dir",
     "pack": "npm run build && electron-builder --dir",
     "dist:win": "npm run build && electron-builder --win --x64 --publish=never",
-    "dist:win:all": "npm run build && electron-builder --win --x64 --publish=never",
+    "dist:win:ia32": "npm run build && electron-builder --win --ia32 --publish=never",
+    "dist:win:all": "npm run build && electron-builder --win --x64 --ia32 --publish=never",
     "clean": "rimraf dist && rimraf dist && rimraf frontend/dist && rimraf logs",
     "postinstall": "electron-builder install-app-deps"
   },
@@ -93,7 +94,8 @@
         {
           "target": "exe",
           "arch": [
-            "x64"
+            "x64",
+            "ia32"
           ]
         }
       ],
