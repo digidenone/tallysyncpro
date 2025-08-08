@@ -44,6 +44,7 @@ const splashScreen = require('./src/components/splash-screen');
 // Add missing core services
 const tallyService = require('./src/services/tally.service');
 const excelService = require('./src/services/excel.service');
+const pythonODBCService = require('./src/services/python-odbc.service');
 
 // Initialize services
 let frontendAPI = null;
@@ -1125,8 +1126,48 @@ ipcMain.handle('test-tally-connection', async (event, config) => {
     const port = (config && (config.port || 9000)) || 9000;
     const connStr = config?.connectionString || `Driver={Tally ODBC Driver};Server=${host};Port=${port};`;
 
-    if (!odbc) {
-      // Fallback: HTTP XML ping to Tally Gateway
+    // Method 1: Try ODBC first (primary method)
+    if (odbc) {
+      try {
+        const connection = await odbc.connect(connStr);
+        try {
+          try { await connection.query('SELECT 1'); }
+          catch { await connection.query('SELECT TOP 1 * FROM COMPANY'); }
+        } finally {
+          await connection.close();
+        }
+        return { success: true, connected: true, method: 'node-odbc', host, port };
+      } catch (odbcError) {
+        console.log('Node ODBC failed, trying pyodbc fallback:', odbcError.message);
+        
+        // Method 2: Try pyodbc fallback (secondary method)
+        try {
+          const pyodbcResult = await pythonODBCService.testConnection({ host, port, connectionString: connStr });
+          if (pyodbcResult.success && pyodbcResult.connected) {
+            return pyodbcResult;
+          }
+          console.log('PyODBC also failed, trying HTTP XML fallback:', pyodbcResult.error);
+        } catch (pyodbcError) {
+          console.log('PyODBC fallback error:', pyodbcError.message);
+        }
+      }
+    } else {
+      console.log('Node ODBC not available, trying pyodbc fallback');
+      
+      // Method 2: Try pyodbc fallback when node-odbc not available
+      try {
+        const pyodbcResult = await pythonODBCService.testConnection({ host, port, connectionString: connStr });
+        if (pyodbcResult.success && pyodbcResult.connected) {
+          return pyodbcResult;
+        }
+        console.log('PyODBC failed, trying HTTP XML fallback:', pyodbcResult.error);
+      } catch (pyodbcError) {
+        console.log('PyODBC fallback error:', pyodbcError.message);
+      }
+    }
+
+    // Method 3: HTTP XML fallback (tertiary method)
+    try {
       const http = require('http');
       const xml = '<ENVELOPE><HEADER><VERSION>1</VERSION><TALLYREQUEST>Export</TALLYREQUEST><TYPE>Data</TYPE><ID>List of Companies</ID></HEADER><BODY></BODY></ENVELOPE>';
       const payload = Buffer.from(xml, 'utf8');
@@ -1141,18 +1182,10 @@ ipcMain.handle('test-tally-connection', async (event, config) => {
         req.end();
       });
       const ok = res.statusCode === 200 && typeof res.body === 'string' && res.body.includes('ENVELOPE');
-      return { success: ok, connected: ok, method: 'http-xml', host, port, error: ok ? undefined : 'Tally did not respond to XML' };
+      return { success: ok, connected: ok, method: 'http-xml', host, port, error: ok ? undefined : 'Tally did not respond to XML request' };
+    } catch (httpError) {
+      return { success: false, error: `All connection methods failed. Last error: ${httpError.message}`, connected: false, methods_tried: ['node-odbc', 'pyodbc', 'http-xml'] };
     }
-
-    // Try ODBC connection
-    const connection = await odbc.connect(connStr);
-    try {
-      try { await connection.query('SELECT 1'); }
-      catch { await connection.query('SELECT TOP 1 * FROM COMPANY'); }
-    } finally {
-      await connection.close();
-    }
-    return { success: true, connected: true, method: 'odbc', host, port };
   } catch (err) {
     return { success: false, error: err.message, connected: false };
   }
@@ -1238,6 +1271,32 @@ ipcMain.handle('tally-get-config', async () => {
   return { success: true, config: tallyConfig };
 });
 
+// Python ODBC Service IPC Handlers
+ipcMain.handle('python-odbc-status', async () => {
+  try {
+    return { success: true, status: pythonODBCService.getStatus() };
+  } catch (error) {
+    return { success: false, error: error.message };
+  }
+});
+
+ipcMain.handle('python-odbc-install-instructions', async () => {
+  try {
+    return { success: true, instructions: pythonODBCService.getInstallInstructions() };
+  } catch (error) {
+    return { success: false, error: error.message };
+  }
+});
+
+ipcMain.handle('python-odbc-list-drivers', async () => {
+  try {
+    const result = await pythonODBCService.listDrivers();
+    return { success: true, result };
+  } catch (error) {
+    return { success: false, error: error.message };
+  }
+});
+
 // ================================================================
 // INITIALIZATION SEQUENCE
 // ================================================================
@@ -1281,6 +1340,15 @@ async function initializeApp() {
     // Excel service
     await new Promise(resolve => setTimeout(resolve, 450));
     splashScreen.updateProgress('Setting up Excel processing...', 68);
+    
+    // Initialize Python ODBC service
+    await new Promise(resolve => setTimeout(resolve, 400));
+    splashScreen.updateProgress('Setting up Python ODBC fallback...', 73);
+    try {
+      await pythonODBCService.initialize();
+    } catch (pyError) {
+      console.warn('Python ODBC service initialization failed:', pyError.message);
+    }
     
     // Initialize frontend API service
     await new Promise(resolve => setTimeout(resolve, 400));

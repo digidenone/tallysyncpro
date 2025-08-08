@@ -1,0 +1,8 @@
+# TallySyncPro Python Dependencies
+# For pyodbc fallback functionality
+
+# Primary ODBC driver for database connectivity
+pyodbc>=4.0.0
+
+# Optional: Additional database drivers that might be useful
+# pyodbc is the main requirement for Tally ODBC connectivity
