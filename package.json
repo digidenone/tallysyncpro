@@ -32,7 +32,10 @@
     "pack": "npm run build && electron-builder --dir",
     "dist:win": "npm run build && electron-builder --win --ia32 --publish=never",
     "clean": "rimraf dist && rimraf dist && rimraf frontend/dist && rimraf logs",
-    "postinstall": "electron-builder install-app-deps"
+    "postinstall": "electron-builder install-app-deps",
+    "dir:ia32": "npm run build && electron-builder --dir --win --ia32",
+    "inno:build": "iscc InnoSetup\\TallySyncPro.iss",
+    "rebuild:ia32": "electron-rebuild -f -w odbc --arch=ia32 -v 29.4.6"
   },
   "dependencies": {
     "chokidar": "^3.6.0",
@@ -54,6 +57,7 @@
     "concurrently": "^7.6.0",
     "electron": "^29.4.6",
     "electron-builder": "^24.13.3",
+    "electron-rebuild": "^3.2.9",
     "rimraf": "^5.0.5",
     "wait-on": "^7.2.0"
   },
@@ -90,7 +94,7 @@
     "win": {
       "target": [
         {
-          "target": "exe",
+          "target": "nsis",
           "arch": [
             "ia32"
           ]
