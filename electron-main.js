@@ -41,6 +41,9 @@ const serviceManager = require('./src/services/service-manager');
 const FrontendAPIService = require('./src/services/frontend-api.service');
 const bugReportService = require('./src/services/bug-report.service');
 const splashScreen = require('./src/components/splash-screen');
+// Add missing core services
+const tallyService = require('./src/services/tally.service');
+const excelService = require('./src/services/excel.service');
 
 // Initialize services
 let frontendAPI = null;
@@ -1115,102 +1118,41 @@ ipcMain.handle('process-excel-file', async (event, filePath) => {
 });
 
 // Tally Integration IPC Handlers
-ipcMain.handle('test-tally-connection', async (event, connectionData) => {
+ipcMain.handle('test-tally-connection', async (event, config) => {
   try {
-    const result = await tallyService.testConnection(connectionData);
-    return { success: true, result };
-  } catch (error) {
-    return { success: false, error: error.message };
-  }
-});
+    // Normalize inputs
+    const host = (config && (config.host || config.server)) || 'localhost';
+    const port = (config && (config.port || 9000)) || 9000;
+    const connStr = config?.connectionString || `Driver={Tally ODBC Driver};Server=${host};Port=${port};`;
 
-ipcMain.handle('sync-to-tally', async (event, syncData) => {
-  try {
-    const result = await tallyService.syncData(syncData);
-    serviceManager.addRecentActivity({
-      type: 'sync_completed',
-      message: `Synchronized data to Tally ERP`,
-      details: result
-    });
-    return { success: true, result };
-  } catch (error) {
-    return { success: false, error: error.message };
-  }
-});
-
-// Application Lifecycle IPC Handlers
-ipcMain.handle('app-ready', async () => {
-  try {
-    // Mark app as ready and update statistics
-    serviceManager.updateDashboardStatistics('initialization', { success: true });
-    serviceManager.addRecentActivity({
-      type: 'app_started',
-      message: 'TallySyncPro application started successfully'
-    });
-    return { success: true };
-  } catch (error) {
-    return { success: false, error: error.message };
-  }
-});
-
-ipcMain.handle('app-shutdown', async () => {
-  try {
-    await serviceManager.shutdown();
-    return { success: true };
-  } catch (error) {
-    return { success: false, error: error.message };
-  }
-});
-
-// Settings IPC Handlers
-ipcMain.handle('get-app-settings', async () => {
-  try {
-    const settings = serviceManager.appStore.store;
-    return { success: true, settings };
-  } catch (error) {
-    return { success: false, error: error.message };
-  }
-});
-
-ipcMain.handle('update-app-settings', async (event, newSettings) => {
-  try {
-    Object.keys(newSettings).forEach(key => {
-      serviceManager.appStore.set(key, newSettings[key]);
-    });
-    return { success: true };
-  } catch (error) {
-    return { success: false, error: error.message };
-  }
-});
-
-// ================================================================
-// EXISTING ODBC HANDLER (Enhanced)
-// ================================================================
-ipcMain.handle('odbc-query', async (event, { connectionString, query }) => {
-  try {
     if (!odbc) {
-      return { success: false, error: 'ODBC module not available' };
+      // Fallback: HTTP XML ping to Tally Gateway
+      const http = require('http');
+      const xml = '<ENVELOPE><HEADER><VERSION>1</VERSION><TALLYREQUEST>Export</TALLYREQUEST><TYPE>Data</TYPE><ID>List of Companies</ID></HEADER><BODY></BODY></ENVELOPE>';
+      const payload = Buffer.from(xml, 'utf8');
+      const res = await new Promise((resolve, reject) => {
+        const req = http.request({ host, port, method: 'POST', path: '/', headers: { 'Content-Type': 'text/xml', 'Content-Length': payload.length } }, r => {
+          let data = '';
+          r.on('data', chunk => data += chunk);
+          r.on('end', () => resolve({ statusCode: r.statusCode, body: data }));
+        });
+        req.on('error', reject);
+        req.write(payload);
+        req.end();
+      });
+      const ok = res.statusCode === 200 && typeof res.body === 'string' && res.body.includes('ENVELOPE');
+      return { success: ok, connected: ok, method: 'http-xml', host, port, error: ok ? undefined : 'Tally did not respond to XML' };
     }
-    const connection = await odbc.connect(connectionString);
-    const result = await connection.query(query);
-    await connection.close();
-    return { success: true, result };
-  } catch (err) {
-    return { success: false, error: err.message };
-  }
-});
 
-// Tally IPC Handlers
-ipcMain.handle('tally-test-connection', async (event, config) => {
-  try {
-    if (!odbc) {
-      return { success: false, error: 'ODBC module not available' };
+    // Try ODBC connection
+    const connection = await odbc.connect(connStr);
+    try {
+      try { await connection.query('SELECT 1'); }
+      catch { await connection.query('SELECT TOP 1 * FROM COMPANY'); }
+    } finally {
+      await connection.close();
     }
-    // Test Tally connection using ODBC
-    const connection = await odbc.connect(config.connectionString);
-    const result = await connection.query('SELECT * FROM TallyStatus');
-    await connection.close();
-    return { success: true, connected: true };
+    return { success: true, connected: true, method: 'odbc', host, port };
   } catch (err) {
     return { success: false, error: err.message, connected: false };
   }
@@ -1218,17 +1160,20 @@ ipcMain.handle('tally-test-connection', async (event, config) => {
 
 ipcMain.handle('tally-get-status', async () => {
   try {
+    const defaultConn = `Driver={Tally ODBC Driver};Server=localhost;Port=9000;`;
     if (!odbc) {
       return { success: false, error: 'ODBC module not available', connected: false };
     }
-    // Get saved connection string from config
-    const config = {}; // TODO: Implement config storage
-    const connection = await odbc.connect(config.connectionString);
-    const result = await connection.query('SELECT * FROM TallyStatus');
-    await connection.close();
+    const connection = await odbc.connect(defaultConn);
+    try {
+      try { await connection.query('SELECT 1'); }
+      catch { await connection.query('SELECT TOP 1 * FROM COMPANY'); }
+    } finally {
+      await connection.close();
+    }
     return { success: true, connected: true };
   } catch (err) {
-    return { success: false, connected: false };
+    return { success: false, connected: false, error: err.message };
   }
 });
 
@@ -1238,7 +1183,6 @@ ipcMain.handle('tally-import-vouchers', async (event, data) => {
       return { success: false, error: 'ODBC module not available' };
     }
     const connection = await odbc.connect(data.connectionString);
-    // Execute the import query based on data
     const result = await connection.query(data.query);
     await connection.close();
     return { success: true, result };
