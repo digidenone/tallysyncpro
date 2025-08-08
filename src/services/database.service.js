@@ -454,14 +454,31 @@ class DatabaseService extends EventEmitter {
    * Build connection string from profile
    */
   buildConnectionString(profile) {
+    // Prefer DSN if explicitly provided (recommended for Tally ODBC)
+    if (profile && profile.dsn) {
+      return `DSN=${profile.dsn};`;
+    }
+
+    // Build minimal driver-based connection string for Tally ERP 9
+    const driver = (profile && profile.driver) || dbConfig.tally.connection.driver || 'Tally ODBC Driver';
+    const host = (profile && profile.host) || dbConfig.tally.connection.host || 'localhost';
+    const port = (profile && profile.port) || dbConfig.tally.connection.port || 9000;
+
+    // Tally ERP 9 ODBC typically doesn't require Database/Uid/Pwd
+    const minimal = `Driver={${driver}};Server=${host};Port=${port};`;
+
+    // If template exists and user intentionally provided credentials, keep compatibility
     const template = dbConfig.tally.connection.connectionStringTemplate;
-    
-    return template
-      .replace('${host}', profile.host)
-      .replace('${port}', profile.port)
-      .replace('${database}', profile.databaseName || '')
-      .replace('${username}', profile.username || '')
-      .replace('${password}', profile.password || '');
+    if (profile && (profile.databaseName || profile.username || profile.password)) {
+      return template
+        .replace('${host}', host)
+        .replace('${port}', port)
+        .replace('${database}', profile.databaseName || '')
+        .replace('${username}', profile.username || '')
+        .replace('${password}', profile.password || '');
+    }
+
+    return minimal;
   }
   
   /**

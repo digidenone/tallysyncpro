@@ -1,4 +1,13 @@
 import React, { useState, useEffect } from 'react';
+// Add global type for Electron preload API
+declare global {
+  interface Window {
+    tallyAPI: {
+      testConnection: (config: any) => Promise<{ success: boolean; connected: boolean; error?: string }>;
+    };
+  }
+}
+
 import { Card, CardContent, CardHeader, CardTitle } from './card';
 import { Badge } from './badge';
 import { Button } from './button';
@@ -76,31 +85,21 @@ export const ConnectionStatusDisplay: React.FC<ConnectionStatusDisplayProps> = (
   // Test direct connectivity to Tally through integrated service
   const testTallyServiceConnection = async (): Promise<boolean> => {
     updateStepStatus('service-tally', 'connecting');
-    
-    let timeoutId: NodeJS.Timeout | undefined;
+
     try {
-      const controller = new AbortController();
-      timeoutId = setTimeout(() => controller.abort(), 8000);
-      
-      const response = await fetch('http://localhost:3001/api/tally/test-connection', {
-        signal: controller.signal,
-        headers: { 'Content-Type': 'application/json' }
-      });
-      
-      const data = await response.json();
-      
-      if (!data || !data.success) {
-        throw new Error('TallySyncPro Service not connected to Tally');
+      // Use Electron preload IPC bridge
+      const result = await window.tallyAPI.testConnection({ host: 'localhost', port: 9000 });
+
+      if (!result || !result.connected) {
+        throw new Error(result?.error || 'Not connected');
       }
-        clearTimeout(timeoutId);
+
       updateStepStatus('service-tally', 'connected');
-      NotificationService.connectionSuccess('tally', 'TallySyncPro Service connected to Tally ERP 9');
+      NotificationService.connectionSuccess('tally', 'Connected to Tally ERP 9');
       return true;
-      
+
     } catch (error) {
-      if (timeoutId) clearTimeout(timeoutId);      const errorMsg = error instanceof Error && error.name === 'AbortError'
-        ? 'Tally ERP connection is not active. Please check your Tally installation and TallySyncPro app.'
-        : 'Tally ERP connection is not active. Please check your Tally installation and TallySyncPro app.';
+      const errorMsg = 'Tally ERP connection is not active. Please check Tally is open and ODBC/Port 9000 is enabled.';
       updateStepStatus('service-tally', 'error', errorMsg);
       NotificationService.connectionError('tally', errorMsg);
       return false;
@@ -159,10 +158,15 @@ export const ConnectionStatusDisplay: React.FC<ConnectionStatusDisplayProps> = (
         runConnectionTest();
       }
     }, 10000);
+
+    // Listen for tray-triggered custom event
+    const trayHandler = () => { runConnectionTest(); };
+    window.addEventListener('test-tally-connection' as any, trayHandler as any);
     
     return () => {
       clearTimeout(initialTimer);
       clearInterval(intervalTimer);
+      window.removeEventListener('test-tally-connection' as any, trayHandler as any);
     };
   }, []);
 

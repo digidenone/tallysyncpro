@@ -41,6 +41,9 @@ const serviceManager = require('./src/services/service-manager');
 const FrontendAPIService = require('./src/services/frontend-api.service');
 const bugReportService = require('./src/services/bug-report.service');
 const splashScreen = require('./src/components/splash-screen');
+// Add missing core services
+const tallyService = require('./src/services/tally.service');
+const excelService = require('./src/services/excel.service');
 
 // Initialize services
 let frontendAPI = null;
@@ -1115,7 +1118,7 @@ ipcMain.handle('process-excel-file', async (event, filePath) => {
 });
 
 // Tally Integration IPC Handlers
-ipcMain.handle('test-tally-connection', async (event, config) => {
+ipcMain.handle('tally-test-connection', async (event, config) => {
   try {
     const host = (config && (config.host || config.server)) || 'localhost';
     const port = (config && (config.port || 9000)) || 9000;
@@ -1150,7 +1153,7 @@ ipcMain.handle('test-tally-connection', async (event, config) => {
       if (ok) return { success: true, connected: true, method: 'http-xml' };
     } catch (e) { /* continue */ }
 
-    // 3) pyodbc fallback
+    // 3) pyodbc fallback (requires 32-bit Python when DSN is 32-bit)
     try {
       // Prefer DSN for 32-bit
       const dsnName = config?.dsn || process.env.TALLY_DSN || 'TallyODBC_9000';
@@ -1172,153 +1175,55 @@ ipcMain.handle('test-tally-connection', async (event, config) => {
   }
 });
 
-ipcMain.handle('sync-to-tally', async (event, syncData) => {
+ipcMain.handle('tally-get-status', async () => {
   try {
-    const result = await tallyService.syncData(syncData);
-    serviceManager.addRecentActivity({
-      type: 'sync_completed',
-      message: `Synchronized data to Tally ERP`,
-      details: result
-    });
-    return { success: true, result };
-  } catch (error) {
-    return { success: false, error: error.message };
-  }
-});
+    const host = 'localhost';
+    const port = 9000;
+    const connStr = buildTallyConnString({});
 
-// Application Lifecycle IPC Handlers
-ipcMain.handle('app-ready', async () => {
-  try {
-    // Mark app as ready and update statistics
-    serviceManager.updateDashboardStatistics('initialization', { success: true });
-    serviceManager.addRecentActivity({
-      type: 'app_started',
-      message: 'TallySyncPro application started successfully'
-    });
-    return { success: true };
-  } catch (error) {
-    return { success: false, error: error.message };
-  }
-});
-
-ipcMain.handle('app-shutdown', async () => {
-  try {
-    await serviceManager.shutdown();
-    return { success: true };
-  } catch (error) {
-    return { success: false, error: error.message };
-  }
-});
-
-// Settings IPC Handlers
-ipcMain.handle('get-app-settings', async () => {
-  try {
-    const settings = serviceManager.appStore.store;
-    return { success: true, settings };
-  } catch (error) {
-    return { success: false, error: error.message };
-  }
-});
-
-ipcMain.handle('update-app-settings', async (event, newSettings) => {
-  try {
-    Object.keys(newSettings).forEach(key => {
-      serviceManager.appStore.set(key, newSettings[key]);
-    });
-    return { success: true };
-  } catch (error) {
-    return { success: false, error: error.message };
-  }
-});
-
-// ================================================================
-// EXISTING ODBC HANDLER (Enhanced)
-// ================================================================
-ipcMain.handle('odbc-query', async (event, { connectionString, query }) => {
-  try {
-    if (!odbc) {
-      return { success: false, error: 'ODBC module not available' };
-    }
-    const connection = await odbc.connect(connectionString);
-    const result = await connection.query(query);
-    await connection.close();
-    return { success: true, result };
-  } catch (err) {
-    return { success: false, error: err.message };
-  }
-});
-
-// Tally IPC Handlers
-ipcMain.handle('tally-test-connection', async (event, config) => {
-  try {
-    const host = (config && (config.host || config.server)) || 'localhost';
-    const port = (config && (config.port || 9000)) || 9000;
-    const connStr = buildTallyConnString(config);
-
-    // 1) Try ODBC (Node) using provided/derived connStr
+    // 1) ODBC first
     if (odbc) {
       try {
         const connection = await odbc.connect(connStr);
         try { await connection.query('SELECT 1'); }
         catch { await connection.query('SELECT TOP 1 * FROM COMPANY'); }
         await connection.close();
-        return { success: true, connected: true, method: 'odbc', connStr };
+        return { success: true, connected: true };
       } catch (e) {
-        // Try DSN default as second ODBC attempt (useful when 32-bit DSN name is known)
+        // DSN fallback try
         try {
-          const dsnName = config?.dsn || process.env.TALLY_DSN || 'TallyODBC_9000';
+          const dsnName = process.env.TALLY_DSN || 'TallyODBC_9000';
           const altConn = `DSN=${dsnName};`;
           const c2 = await odbc.connect(altConn);
           try { await c2.query('SELECT 1'); } catch { await c2.query('SELECT TOP 1 * FROM COMPANY'); }
           await c2.close();
-          return { success: true, connected: true, method: 'odbc', connStr: altConn };
+          return { success: true, connected: true };
         } catch (_) {
-          // continue to next fallback
+          // continue
         }
       }
     }
 
-    // 2) HTTP XML
+    // 2) HTTP XML ping
     try {
       const { ok } = await tryHttpXmlPing(host, port);
-      if (ok) return { success: true, connected: true, method: 'http-xml' };
-    } catch (e) {
-      // continue
-    }
+      if (ok) return { success: true, connected: true };
+    } catch (_) {}
 
-    // 3) pyodbc fallback (requires 32-bit Python when DSN is 32-bit)
+    // 3) pyodbc fallback
     try {
-      const result = await tryPyodbcFallback(connStr, 'SELECT 1');
-      if (result && result.success) {
-        return { success: true, connected: true, method: 'pyodbc' };
-      }
-      // Last attempt using COMPANY table
-      const result2 = await tryPyodbcFallback(connStr, 'SELECT TOP 1 * FROM COMPANY');
-      if (result2 && result2.success) {
-        return { success: true, connected: true, method: 'pyodbc' };
-      }
+      const dsnName = process.env.TALLY_DSN || 'TallyODBC_9000';
+      const pyConn = `DSN=${dsnName};`;
+      const result = await tryPyodbcFallback(pyConn, 'SELECT 1');
+      if (result && result.success) return { success: true, connected: true };
+      const result2 = await tryPyodbcFallback(pyConn, 'SELECT TOP 1 * FROM COMPANY');
+      if (result2 && result2.success) return { success: true, connected: true };
       return { success: false, connected: false, error: result2?.error || result?.error || 'All methods failed' };
     } catch (e) {
       return { success: false, connected: false, error: e.message };
     }
   } catch (err) {
-    return { success: false, error: err.message, connected: false };
-  }
-});
-
-ipcMain.handle('tally-get-status', async () => {
-  try {
-    if (!odbc) {
-      return { success: false, error: 'ODBC module not available', connected: false };
-    }
-    // Get saved connection string from config
-    const config = {}; // TODO: Implement config storage
-    const connection = await odbc.connect(config.connectionString);
-    const result = await connection.query('SELECT * FROM TallyStatus');
-    await connection.close();
-    return { success: true, connected: true };
-  } catch (err) {
-    return { success: false, connected: false };
+    return { success: false, connected: false, error: err.message };
   }
 });
 
@@ -1328,7 +1233,6 @@ ipcMain.handle('tally-import-vouchers', async (event, data) => {
       return { success: false, error: 'ODBC module not available' };
     }
     const connection = await odbc.connect(data.connectionString);
-    // Execute the import query based on data
     const result = await connection.query(data.query);
     await connection.close();
     return { success: true, result };
