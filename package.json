@@ -71,6 +71,7 @@
       "frontend/dist/**/*",
       "src/**/*",
       "assets/**/*",
+      "scripts/**/*",
       {
         "from": "node_modules",
         "filter": [

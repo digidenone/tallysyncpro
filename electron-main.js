@@ -1115,12 +1115,60 @@ ipcMain.handle('process-excel-file', async (event, filePath) => {
 });
 
 // Tally Integration IPC Handlers
-ipcMain.handle('test-tally-connection', async (event, connectionData) => {
+ipcMain.handle('test-tally-connection', async (event, config) => {
   try {
-    const result = await tallyService.testConnection(connectionData);
-    return { success: true, result };
-  } catch (error) {
-    return { success: false, error: error.message };
+    const host = (config && (config.host || config.server)) || 'localhost';
+    const port = (config && (config.port || 9000)) || 9000;
+    const connStr = buildTallyConnString(config);
+
+    // 1) Try ODBC (Node) using provided/derived connStr
+    if (odbc) {
+      try {
+        const connection = await odbc.connect(connStr);
+        try { await connection.query('SELECT 1'); }
+        catch { await connection.query('SELECT TOP 1 * FROM COMPANY'); }
+        await connection.close();
+        return { success: true, connected: true, method: 'odbc', connStr };
+      } catch (e) {
+        // Try DSN default as second ODBC attempt (useful when 32-bit DSN name is known)
+        try {
+          const dsnName = config?.dsn || process.env.TALLY_DSN || 'TallyODBC_9000';
+          const altConn = `DSN=${dsnName};`;
+          const c2 = await odbc.connect(altConn);
+          try { await c2.query('SELECT 1'); } catch { await c2.query('SELECT TOP 1 * FROM COMPANY'); }
+          await c2.close();
+          return { success: true, connected: true, method: 'odbc', connStr: altConn };
+        } catch (_) {
+          // continue to next fallback
+        }
+      }
+    }
+
+    // 2) HTTP XML
+    try {
+      const { ok } = await tryHttpXmlPing(host, port);
+      if (ok) return { success: true, connected: true, method: 'http-xml' };
+    } catch (e) { /* continue */ }
+
+    // 3) pyodbc fallback
+    try {
+      // Prefer DSN for 32-bit
+      const dsnName = config?.dsn || process.env.TALLY_DSN || 'TallyODBC_9000';
+      const pyConn = /DSN=/i.test(connStr) ? connStr : `DSN=${dsnName};`;
+      const result = await tryPyodbcFallback(pyConn, 'SELECT 1');
+      if (result && result.success) {
+        return { success: true, connected: true, method: 'pyodbc' };
+      }
+      const result2 = await tryPyodbcFallback(pyConn, 'SELECT TOP 1 * FROM COMPANY');
+      if (result2 && result2.success) {
+        return { success: true, connected: true, method: 'pyodbc' };
+      }
+      return { success: false, connected: false, error: result2?.error || result?.error || 'All methods failed' };
+    } catch (e) {
+      return { success: false, connected: false, error: e.message };
+    }
+  } catch (err) {
+    return { success: false, error: err.message, connected: false };
   }
 });
 
@@ -1203,14 +1251,56 @@ ipcMain.handle('odbc-query', async (event, { connectionString, query }) => {
 // Tally IPC Handlers
 ipcMain.handle('tally-test-connection', async (event, config) => {
   try {
-    if (!odbc) {
-      return { success: false, error: 'ODBC module not available' };
+    const host = (config && (config.host || config.server)) || 'localhost';
+    const port = (config && (config.port || 9000)) || 9000;
+    const connStr = buildTallyConnString(config);
+
+    // 1) Try ODBC (Node) using provided/derived connStr
+    if (odbc) {
+      try {
+        const connection = await odbc.connect(connStr);
+        try { await connection.query('SELECT 1'); }
+        catch { await connection.query('SELECT TOP 1 * FROM COMPANY'); }
+        await connection.close();
+        return { success: true, connected: true, method: 'odbc', connStr };
+      } catch (e) {
+        // Try DSN default as second ODBC attempt (useful when 32-bit DSN name is known)
+        try {
+          const dsnName = config?.dsn || process.env.TALLY_DSN || 'TallyODBC_9000';
+          const altConn = `DSN=${dsnName};`;
+          const c2 = await odbc.connect(altConn);
+          try { await c2.query('SELECT 1'); } catch { await c2.query('SELECT TOP 1 * FROM COMPANY'); }
+          await c2.close();
+          return { success: true, connected: true, method: 'odbc', connStr: altConn };
+        } catch (_) {
+          // continue to next fallback
+        }
+      }
     }
-    // Test Tally connection using ODBC
-    const connection = await odbc.connect(config.connectionString);
-    const result = await connection.query('SELECT * FROM TallyStatus');
-    await connection.close();
-    return { success: true, connected: true };
+
+    // 2) HTTP XML
+    try {
+      const { ok } = await tryHttpXmlPing(host, port);
+      if (ok) return { success: true, connected: true, method: 'http-xml' };
+    } catch (e) {
+      // continue
+    }
+
+    // 3) pyodbc fallback (requires 32-bit Python when DSN is 32-bit)
+    try {
+      const result = await tryPyodbcFallback(connStr, 'SELECT 1');
+      if (result && result.success) {
+        return { success: true, connected: true, method: 'pyodbc' };
+      }
+      // Last attempt using COMPANY table
+      const result2 = await tryPyodbcFallback(connStr, 'SELECT TOP 1 * FROM COMPANY');
+      if (result2 && result2.success) {
+        return { success: true, connected: true, method: 'pyodbc' };
+      }
+      return { success: false, connected: false, error: result2?.error || result?.error || 'All methods failed' };
+    } catch (e) {
+      return { success: false, connected: false, error: e.message };
+    }
   } catch (err) {
     return { success: false, error: err.message, connected: false };
   }
@@ -1293,6 +1383,58 @@ ipcMain.handle('tally-save-config', async (event, config) => {
 ipcMain.handle('tally-get-config', async () => {
   return { success: true, config: tallyConfig };
 });
+
+// Helper to normalize Tally connection params and build ODBC conn string
+function buildTallyConnString(cfg = {}) {
+  // Prefer DSN
+  const envDsn = process.env.TALLY_DSN;
+  if (cfg.dsn) return `DSN=${cfg.dsn};`;
+  if (!cfg.dsn && envDsn) return `DSN=${envDsn};`;
+  if (cfg.connectionString && /DSN=/i.test(cfg.connectionString)) return cfg.connectionString;
+  const host = cfg.host || cfg.server || 'localhost';
+  const port = cfg.port || 9000;
+  const driver = cfg.driver || 'Tally ODBC Driver';
+  return `Driver={${driver}};Server=${host};Port=${port};`;
+}
+
+async function tryHttpXmlPing(host, port) {
+  const http = require('http');
+  const xml = '<ENVELOPE><HEADER><VERSION>1</VERSION><TALLYREQUEST>Export</TALLYREQUEST><TYPE>Data</TYPE><ID>List of Companies</ID></HEADER><BODY></BODY></ENVELOPE>';
+  const payload = Buffer.from(xml, 'utf8');
+  const res = await new Promise((resolve, reject) => {
+    const req = http.request({ host, port, method: 'POST', path: '/', headers: { 'Content-Type': 'text/xml', 'Content-Length': payload.length } }, r => {
+      let data = '';
+      r.on('data', chunk => data += chunk);
+      r.on('end', () => resolve({ statusCode: r.statusCode, body: data }));
+    });
+    req.on('error', reject);
+    req.write(payload);
+    req.end();
+  });
+  const ok = res.statusCode === 200 && typeof res.body === 'string' && res.body.includes('ENVELOPE');
+  return { ok, res };
+}
+
+async function tryPyodbcFallback(connStr, query) {
+  // Runs a small Python helper (must be 32-bit Python if DSN is 32-bit)
+  const { spawn } = require('child_process');
+  const script = path.join(__dirname, 'scripts', 'pyodbc_fallback.py');
+  const pythonExe = process.env.TALLY_PYTHON32_PATH || 'python';
+  return await new Promise((resolve) => {
+    const proc = spawn(pythonExe, [script, connStr, query], { windowsHide: true });
+    let output = '';
+    proc.stdout.on('data', d => output += d.toString());
+    proc.stderr.on('data', d => output += d.toString());
+    proc.on('close', () => {
+      try {
+        const parsed = JSON.parse(output);
+        resolve(parsed);
+      } catch (e) {
+        resolve({ success: false, error: `pyodbc parse error: ${e.message}` });
+      }
+    });
+  });
+}
 
 // ================================================================
 // INITIALIZATION SEQUENCE
