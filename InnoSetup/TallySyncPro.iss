@@ -29,6 +29,8 @@ PrivilegesRequired=admin
 OutputBaseFilename=TallySyncPro
 SolidCompression=yes
 WizardStyle=modern
+SetupIconFile=..\assets\icon.ico
+AppMutex=TallySyncProSingleInstance
 
 [Languages]
 Name: "english"; MessagesFile: "compiler:Default.isl"
@@ -82,14 +84,36 @@ Filename: "{cmd}"; Parameters: "/c taskkill /f /im {#MyAppExeName} /t"; Flags: r
 Filename: "{cmd}"; Parameters: "/c timeout /t 2"; Flags: runhidden; RunOnceId: "WaitForKill"
 
 [Code]
+function IsDSNPresent(): Boolean;
+var
+  rootKey: Integer;
+  dsnPath: String;
+begin
+  { 32-bit Tally DSN lives under WOW6432Node on 64-bit Windows }
+  rootKey := HKLM;
+  dsnPath := 'SOFTWARE\\WOW6432Node\\ODBC\\ODBC.INI\\TallyODBC_9000';
+  if IsWin64 then
+    Result := RegKeyExists(rootKey, dsnPath)
+  else
+    Result := RegKeyExists(rootKey, 'SOFTWARE\\ODBC\\ODBC.INI\\TallyODBC_9000');
+end;
+
+procedure InitializeWizard();
+begin
+  if not IsDSNPresent() then
+  begin
+    MsgBox('Required 32-bit System DSN "TallyODBC_9000" was not found. Please create it with C:\\Windows\\SysWOW64\\odbcad32.exe (System DSN tab) before using TallySyncPro.', mbInformation, MB_OK);
+  end;
+end;
+
 procedure CurUninstallStepChanged(CurUninstallStep: TUninstallStep);
 begin
   if CurUninstallStep = usPostUninstall then
   begin
-    RegDeleteKeyIncludingSubkeys(HKLM, 'SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\{#SetupSetting("AppId")}\_is1');
-    RegDeleteKeyIncludingSubkeys(HKCU, 'SOFTWARE\{#MyAppPublisher}');
-    RegDeleteKeyIncludingSubkeys(HKLM, 'SOFTWARE\{#MyAppPublisher}');
-    RegDeleteValue(HKLM, 'SOFTWARE\Classes\.tallysync', '');
-    RegDeleteKeyIncludingSubkeys(HKLM, 'SOFTWARE\Classes\TallySyncPro');
+    RegDeleteKeyIncludingSubkeys(HKLM, 'SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\{#SetupSetting("AppId")}_is1');
+    RegDeleteKeyIncludingSubkeys(HKCU, 'SOFTWARE\\{#MyAppPublisher}');
+    RegDeleteKeyIncludingSubkeys(HKLM, 'SOFTWARE\\{#MyAppPublisher}');
+    RegDeleteValue(HKLM, 'SOFTWARE\\Classes\\.tallysync', '');
+    RegDeleteKeyIncludingSubkeys(HKLM, 'SOFTWARE\\Classes\\TallySyncPro');
   end;
 end;
