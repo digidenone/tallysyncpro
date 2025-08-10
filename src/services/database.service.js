@@ -29,7 +29,15 @@ try {
   console.log('SQLite3 not available, using ODBC only');
   sqlite3 = null;
 }
-const odbc = require('odbc');
+// Attempt to load ODBC module (may fail if native binary arch mismatch)
+let odbc;
+let odbcLoadError = null;
+try {
+  odbc = require('odbc');
+} catch (err) {
+  odbcLoadError = err;
+  console.log('[DatabaseService] ODBC module unavailable:', err.message);
+}
 const path = require('path');
 const fs = require('fs').promises;
 const fsExtra = require('fs-extra'); // Add fs-extra for directory creation
@@ -182,6 +190,13 @@ class DatabaseService extends EventEmitter {
    */
   async connectToTally(profile) {
     try {
+      if (!odbc) {
+        return { 
+          success: false, 
+            error: `ODBC module not loaded${odbcLoadError ? ': ' + odbcLoadError.message : ''}. Rebuild native module for ia32 Electron.`,
+          code: 'ODBC_MODULE_MISSING'
+        };
+      }
       const connectionString = this.buildConnectionString(profile);
       
       // Test connection first
@@ -244,6 +259,14 @@ class DatabaseService extends EventEmitter {
    */
   async testTallyConnection(profile) {
     try {
+      if (!odbc) {
+        return { 
+          success: false, 
+          connected: false,
+          error: `ODBC module not loaded${odbcLoadError ? ': ' + odbcLoadError.message : ''}`,
+          code: 'ODBC_MODULE_MISSING'
+        };
+      }
       const connectionString = this.buildConnectionString(profile);
       const connection = await odbc.connect(connectionString);
       
@@ -279,6 +302,16 @@ class DatabaseService extends EventEmitter {
     let attempt = 0;
     const maxRetries = options.maxRetries || dbConfig.tally.query.maxRetries;
     const retryDelay = options.retryDelay || dbConfig.tally.query.retryDelay;
+
+    if (!odbc) {
+      return {
+        success: false,
+        error: `ODBC module not loaded${odbcLoadError ? ': ' + odbcLoadError.message : ''}`,
+        code: 'ODBC_MODULE_MISSING',
+        attempts: 0,
+        responseTime: 0
+      };
+    }
     
     while (attempt <= maxRetries) {
       try {
@@ -552,6 +585,8 @@ class DatabaseService extends EventEmitter {
       ...this.queryStats,
       isConnected: this.isConnected,
       activeProfile: this.activeProfile?.name || null,
+  odbcAvailable: Boolean(odbc),
+  odbcLoadError: odbcLoadError ? odbcLoadError.message : null,
       connectionProfiles: this.connectionProfiles.size,
       uptime: process.uptime()
     };

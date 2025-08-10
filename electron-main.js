@@ -28,13 +28,51 @@
 const { app, BrowserWindow, Tray, Menu, ipcMain, shell, dialog } = require('electron');
 const path = require('path');
 
-// Try to import ODBC with fallback
+// Try to import ODBC with fallback (allow disabling for diagnostics)
 let odbc = null;
-try {
-    odbc = require('odbc'); // For Tally ERP database connectivity
-} catch (error) {
-    console.warn('ODBC module not available. Database functionality will be limited.');
+let odbcLoadErr = null;
+function loadOdbcLazy() {
+  if (odbc || odbcLoadErr) return odbc;
+  if (process.env.DISABLE_ODBC === '1') {
+    console.warn('[ODBC] Disabled via DISABLE_ODBC env var');
+    return null;
+  }
+  try {
+    odbc = require('odbc');
+    console.log('[ODBC] Loaded lazily');
+  } catch (e) {
+    odbcLoadErr = e;
+    console.warn('[ODBC] Failed to load:', e.message);
+  }
+  return odbc;
 }
+
+function shouldDeferOdbc() {
+  const deferMs = parseInt(process.env.ODBC_START_DELAY_MS || '0', 10);
+  if (!deferMs) return false;
+  return process.uptime() * 1000 < deferMs;
+}
+
+// Basic crash diagnostics: track unexpected renderer terminations
+app.on('render-process-gone', (event, webContents, details) => {
+  console.error('[CrashDiag] Render process gone:', details);
+});
+app.on('child-process-gone', (event, details) => {
+  console.error('[CrashDiag] Child process gone:', details);
+});
+
+process.on('exit', (code) => {
+  console.log(`[CrashDiag] Process exiting with code ${code}`);
+});
+
+// Force-disable ODBC in packaged production unless explicitly enabled
+if (app.isPackaged && process.env.DISABLE_ODBC !== '0') {
+  process.env.DISABLE_ODBC = '1';
+  console.log('[ODBC] Disabled by default in packaged build (set DISABLE_ODBC=0 to attempt enable)');
+}
+
+// Ensure errorCount variable exists (used by IPC handlers)
+let errorCount = 0;
 
 // Import services and components
 const serviceManager = require('./src/services/service-manager');
@@ -1126,9 +1164,10 @@ ipcMain.handle('tally-test-connection', async (event, config) => {
     const connStr = buildTallyConnString({ ...config, dsn: dsnName });
 
     // Priority 1: ODBC (prefer DSN "TallyODBC_9000" which is 32-bit per screenshot)
-    if (odbc) {
+    const odbcModule = shouldDeferOdbc() ? null : loadOdbcLazy();
+    if (odbcModule) {
       try {
-        const connection = await odbc.connect(connStr);
+        const connection = await odbcModule.connect(connStr);
         try { await connection.query('SELECT 1'); }
         catch { await connection.query('SELECT TOP 1 * FROM COMPANY'); }
         await connection.close();
@@ -1137,7 +1176,7 @@ ipcMain.handle('tally-test-connection', async (event, config) => {
         // Try explicit DSN string if connectionString had a driver
         try {
           const altConn = `DSN=${dsnName};`;
-          const c2 = await odbc.connect(altConn);
+          const c2 = await odbcModule.connect(altConn);
           try { await c2.query('SELECT 1'); } catch { await c2.query('SELECT TOP 1 * FROM COMPANY'); }
           await c2.close();
           return { success: true, connected: true, method: 'odbc', connStr: altConn };
@@ -1176,9 +1215,10 @@ ipcMain.handle('tally-get-status', async () => {
     const port = 9000;
     const connStr = buildTallyConnString({ dsn: dsnName });
 
-    if (odbc) {
+    const odbcModule = shouldDeferOdbc() ? null : loadOdbcLazy();
+    if (odbcModule) {
       try {
-        const connection = await odbc.connect(connStr);
+        const connection = await odbcModule.connect(connStr);
         try { await connection.query('SELECT 1'); }
         catch { await connection.query('SELECT TOP 1 * FROM COMPANY'); }
         await connection.close();
@@ -1186,7 +1226,7 @@ ipcMain.handle('tally-get-status', async () => {
       } catch {
         try {
           const altConn = `DSN=${dsnName};`;
-          const c2 = await odbc.connect(altConn);
+          const c2 = await odbcModule.connect(altConn);
           try { await c2.query('SELECT 1'); } catch { await c2.query('SELECT TOP 1 * FROM COMPANY'); }
           await c2.close();
           return { success: true, connected: true };

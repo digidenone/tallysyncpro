@@ -19,8 +19,9 @@ AppUpdatesURL={#MyAppURL}
 DefaultDirName={autopf32}\{#MyAppName}
 UninstallDisplayIcon={app}\{#MyAppExeName}
 ; 32-bit only
-ArchitecturesAllowed=x86
-ArchitecturesInstallIn64BitMode=no
+; Removed ArchitecturesAllowed to avoid Windows version gating issues; binary itself is 32-bit and runs on x64
+; Explicitly support Windows 10 (and later) and Windows 7+ fallback if needed
+MinVersion=6.1
 DisableProgramGroupPage=yes
 LicenseFile=..\InnoSetup\License.txt
 InfoBeforeFile=..\InnoSetup\PreInstall-Info.txt

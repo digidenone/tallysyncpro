@@ -32,7 +32,7 @@
     "pack": "npm run build && electron-builder --dir",
     "dist:win": "npm run build && electron-builder --win --ia32 --publish=never",
     "clean": "rimraf dist && rimraf dist && rimraf frontend/dist && rimraf logs",
-    "postinstall": "electron-builder install-app-deps",
+  "postinstall": "electron-builder install-app-deps",
     "dir:ia32": "npm run build && electron-builder --dir --win --ia32",
     "inno:build": "iscc InnoSetup\\TallySyncPro.iss",
     "rebuild:ia32": "electron-rebuild -f -w odbc --arch=ia32 -v 29.4.6"

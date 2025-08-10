@@ -24,7 +24,15 @@
  * ================================================================
  */
 
-const odbc = require('odbc');
+let odbc;
+let odbcLoadError = null;
+try {
+  odbc = require('odbc');
+} catch (err) {
+  odbcLoadError = err;
+  // Will rely on HTTP / Python fallbacks elsewhere; avoid crash
+  require('electron-log').warn('[TallyService] ODBC module unavailable:', err.message);
+}
 const EventEmitter = require('events');
 const fs = require('fs').promises;
 const path = require('path');
@@ -302,11 +310,17 @@ class TallyService extends EventEmitter {
       });
 
       // Test connection with timeout
+      if (!odbc) {
+        return {
+          success: false,
+          error: `ODBC module not loaded${odbcLoadError ? ': ' + odbcLoadError.message : ''}`,
+          suggestion: 'Rebuild native module: delete node_modules, set npm_config_arch=ia32, npm ci, then npm run rebuild:ia32'
+        };
+      }
+
       const connection = await Promise.race([
         odbc.connect(connectionString),
-        new Promise((_, reject) => 
-          setTimeout(() => reject(new Error('Connection timeout')), this.config.timeout)
-        )
+        new Promise((_, reject) => setTimeout(() => reject(new Error('Connection timeout')), this.config.timeout))
       ]);
       
       // Test with a simple query to verify access
@@ -362,6 +376,9 @@ class TallyService extends EventEmitter {
           }
 
           // Establish ODBC connection
+          if (!odbc) {
+            throw new Error(`ODBC module not loaded${odbcLoadError ? ': ' + odbcLoadError.message : ''}`);
+          }
           const connectionString = this.buildAdvancedConnectionString(profile);
           const connection = await odbc.connect(connectionString);
           
